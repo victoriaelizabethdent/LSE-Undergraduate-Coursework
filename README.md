@@ -30,3 +30,37 @@ ST211: Applied Regression
 
 #### Third Year (2025/26)
 TBC...
+
+
+SETUP
+```
+lse-coursework-projects/
+│
+├── README.md            <-- main overview (degree, modules, highlights)
+│
+├── 1st-year/
+│   ├── DS105A-Data-for-Data-Science/
+│   │   ├── Coursework1/   <-- code + short README
+│   │   ├── Coursework2/
+│   │   └── Coursework3/
+│   │
+│   └── ST101W-Programming-for-Data-Science/
+│       ├── Coursework1/
+│       ├── Coursework2/
+│       └── Coursework3/
+│
+└── 2nd-year/
+    ├── DS202A-Data-Science-for-Social-Scientists/
+    │   ├── Coursework1/
+    │   ├── Coursework2/
+    │   └── Coursework3/
+    │
+    ├── ST207-Databases/
+    │   ├── Coursework1/
+    │   ├── Coursework2/
+    │   └── Coursework3/
+    │
+    └── ST211-Applied-Regression/
+        ├── Coursework1/
+        └── Coursework2/
+```
