@@ -1,10 +1,4 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/PQaKgvF2)
-
-# DS202A: Data Science for Social Scientists
-
-## On Our Project
-
-> #### "What Actions Can Be Justified? Are There Regional Differences When it Comes to This?"
+#### "What Actions Can Be Justified? Are There Regional Differences When it Comes to This?"
 
 This project explores global attitudes toward moral and ethical issues using Wave 7 of the World Values Survey (WVS) data. We analyze justification scores for various actions (e.g., divorce, abortion, political violence) through descriptive statistics, similarity metrics, and clustering techniques. Our approach aims to identify patterns in moral reasoning and uncover regional differences in justification across countries to answer the questions above, solely using **unsupervised modelling**. 
 
