@@ -1,5 +1,5 @@
 ###### 2023 - 2026
-<h1 align="center"><strong>BSc Politics and Data Science at the London School of Economics</strong></h1>
+<h1 align="center"><strong>BSc Politics and Data Science at LSE</strong></h1>
 <h4 align="center">This repository details the projects I have completed throughout BSc in Politics and Data Science.</h4>
 
 ### First Year (2023-24)
