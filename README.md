@@ -1,66 +1,33 @@
-## BSc Politics and Data Science at the LSE.
-In this repository, I detail the development of my technical skills through studying Politics and Data Science at the LSE. 
+###### 2023 - 2026
+<h1 align="center"><strong>BSc Politics and Data Science at the London School of Economics</strong></h1>
+<h4 align="center">This repository details the projects I have completed throughout BSc in Politics and Data Science.</h4>
 
-#### First Year (2023/24)
-DS105A: Data for Data Science (Final Grade: 70)
+### First Year (2023-24)
+#### DS105A: Data for Data Science (Final Grade: 70)
 * Coursework 1:
 * Coursework 2:
 * Coursework 3:
 * Group Project:
 
 
-ST101W: Programming for Data Science (Final Grade: 75)
+#### ST101W: Programming for Data Science (Final Grade: 75)
 * Coursework 1:
 * Coursework 2:
 * Coursework 3:
 
-#### Second Year (2024/25)
-DS202A: Data Science for Social Scientists (Final Grade: 69)
+#### Second Year (2024-25)
+#### DS202A: Data Science for Social Scientists (Final Grade: 69)
 * Coursework 1:
 * Coursework 2:
-* Coursework 3:
+- [Exploring Regional Patterns of Moral Justification](
 
 
-ST207: Databases (Final Grade: 
-* Coursework 
+#### ST207: Databases (Final Grade: 73)
+- [An Electoral Analysis in the 21st Century]
 
-ST211: Applied Regression
-* Individual Coursework:
-* Group Coursework:
+#### ST211: Applied Regression (Final Grade: 76)
+- [Are Gambling Outcomes Associated with Health Factors?](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/2nd%20Year%20(2024-25)/ST211:%20Applied%20Regression/Are%20Gambling%20Outcomes%20Associated%20with%20Health%20Factors%3F)
+- [What Life Factors Are Associated with Higher Incomes at 25?](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/2nd%20Year%20(2024-25)/ST211:%20Applied%20Regression/What%20Life%20Factors%20Are%20Associated%20with%20Higher%20Incomes%20at%2025%3F)
 
-#### Third Year (2025/26)
+#### Third Year (2025-26)
 TBC...
-
-
-SETUP
-```
-lse-coursework-projects/
-│
-├── README.md            <-- main overview (degree, modules, highlights)
-│
-├── 1st-year/
-│   ├── DS105A-Data-for-Data-Science/
-│   │   ├── Coursework1/   <-- code + short README
-│   │   ├── Coursework2/
-│   │   └── Coursework3/
-│   │
-│   └── ST101W-Programming-for-Data-Science/
-│       ├── Coursework1/
-│       ├── Coursework2/
-│       └── Coursework3/
-│
-└── 2nd-year/
-    ├── DS202A-Data-Science-for-Social-Scientists/
-    │   ├── Coursework1/
-    │   ├── Coursework2/
-    │   └── Coursework3/
-    │
-    ├── ST207-Databases/
-    │   ├── Coursework1/
-    │   ├── Coursework2/
-    │   └── Coursework3/
-    │
-    └── ST211-Applied-Regression/
-        ├── Coursework1/
-        └── Coursework2/
-```
