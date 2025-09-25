@@ -1,0 +1,2067 @@
+---
+title: "DS202A: Data Science for Social Scientists"
+subtitle: "Group 8: What Actions Can Be Justified? Are There Regional Differences When It Comes to This?"
+format: html
+editor: visual
+embed-resources: true
+bibliography: Bibliography.bib
+---
+
+# 1. What Actions Can Be Justified?
+
+## 1.1 Introduction
+
+To answer this research question, we explored and analysed data from the seventh wave of the World Values Survey (WVS). The WVS is an international research endeavour committed to the scientific investigation of values - "social, political, economic, religious, and cultural" - the purpose being to ascertain their temporal stability and impact on societal development [@world_values_survey_wvs_nodate] [@inglehart_attitudes_2021]. These values are investigated in five year waves, primarily using a "representative comparative social survey" [@world_values_survey_wvs_nodate]. The methodological rigour of the survey design and delivery decreases the probability of suspicion, framing effects, and biases from respondents [@torgler_attitudes_2005; @torgler_gender_2010]. Accordingly, the WVS is globally implemented and recognised in academia and policy, having generated thousands of publications and citations, and been employed by governments and organisations worldwide, including the World Health Organisation and the United Nations [@world_values_survey_wvs_nodate].
+
+Between 2017 and 2022, 64 surveys were completed on representative, random probability samples of each country's adult population [@inglehart_attitudes_2021; @martinez_justification_2022], mostly between 2018-2020 using face-to-face interviews [@world_values_survey_wvs_nodate]. This generated a detailed dataset [@haerpfer_world_2022] of considerable "geographical and thematic scope", encompassing 94.5% of the global population and a wide variety of social scientific disciplines [@world_values_survey_wvs_nodate].
+
+The research question *what actions can be justified?* is in reference to the actions listed in questions 177 to 195 of the WVS. The actions of interest range from seemingly minor indiscretions, such as avoiding a fare on public transport, to more serious offences like bribery, violence, terrorism, and controversial bioethical issues including abortion, euthanasia, and capital punishment. Acceptability, or justifiability, of such actions will likely vary cross-culturally as the "norms, values, and belief systems" regarding right and wrong differ between cultures [@lee_perception_2004], perhaps due to religious and political ideology, family values, economic status, education level, and other individual, social, economic, and cultural factors. Section 1 of the report will investigate how justifiability of the specified actions can be calculated in answer to the first research question.
+
+**RStudio Setup** (importing packages and libraries)
+
+```{r, message=FALSE}
+library('tidyverse')
+library('plotly')
+library('tidymodels')
+library('moments')
+library('car')
+library('knitr')
+library('kableExtra')
+library('dendextend')
+library('reshape2')
+library('philentropy') # for Jensen-Shannon divergence
+library('e1071')       # for skew
+library('factoextra')  # for elbow and average silhouette plots
+library('dbscan')      # library for DBSCAN
+library('ggrepel')
+library('parallel') # parallel processing 
+library('doParallel')
+library('corrplot')
+
+# Maps 
+library('maps')
+library('countrycode')
+library('rnaturalearth')
+library('rnaturalearthdata')
+
+# prediction models 
+library('rpart.plot')
+
+library('magrittr')
+```
+
+## 1.2 Loading and Cleaning Data
+
+```{r, warning=FALSE, message=FALSE}
+wvs <- read.csv(unz("WVS.csv.zip", 
+                     "WVS.csv"))
+
+```
+
+### Selecting Relevant Variables
+
+```{r, warning=FALSE, message=FALSE}
+
+# Select relevant demographics columns 
+dem_cols <- c("B_COUNTRY", "B_COUNTRY_ALPHA", "N_REGION_ISO", "N_REGION_WVS", "G_TOWNSIZE2", "H_SETTLEMENT", "H_URBRURAL", "O1_LONGITUDE", "O2_LATITUDE")
+
+# Independent variables 
+ind_vars <- c("Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q260", "X003R2", "Q269", "Q274", "Q275R", "Q287", "Q289")
+
+# Select questions  
+wvs_qs <- wvs %>% 
+  select(all_of(dem_cols), all_of(ind_vars), Q177:Q195)
+
+# Add country_name column for interpretability 
+wvs_qs <- wvs_qs %>%
+  mutate(country_name = case_when(
+    B_COUNTRY_ALPHA == "NIR" ~ "Northern Ireland", 
+    B_COUNTRY_ALPHA == "GBR" ~ "Great Britain", # Resolve GBR/UK/NI disparity 
+    TRUE ~ countrycode(B_COUNTRY_ALPHA, 
+                      origin = 'iso3c',
+                      destination = 'country.name')
+  )) %>% 
+  relocate(country_name) 
+
+head(wvs_qs) %>% 
+  kable()
+```
+
+We select the relevant question numbers for our analysis, Q177:Q195, along with a range of demographic columns to retain the country specific identifiers and geographic information, along with a set of independent variables for prediction in section 2.4. We also retrieve individual country names for ease of interpretation.
+
+### Cleaning Data
+
+In the data, `N/A` and "Don't Know" responses are coded as -1, -2, -3, and -5. We have decided to replace all instances of these integers with `N/A` for analysis, as to engage in imputation could introduce potential biases and assumptions that do not accurately reflect respondents. The World Values Survey (WVS) captures a broad range of cultural, societal, and individual perspectives across multiple countries, and these coded responses often reflect uncertainty or lack of knowledge, rather than missing data. Imputing these values could distort the true views of respondents, especially considering the complexity of factors such as national contexts, individual belief systems, and social influences (e.g. the importance of family or religion). Each country may have different interpretations, weights, or legislation regarding certain issues, and so imputing these values could mask regional or demographic differences, necessary for the next part of our analysis – "[2. Are There Regional Differences When It Comes to This?]". By rendering these responses as null, we allow for a more accurate representation of the diverse worldviews reflected in the WVS data, ensuring our analysis remains grounded in actual responses provided by participants.
+
+```{r, message = FALSE, warning = FALSE}
+# replace with N/A 
+wvs_qs <- wvs_qs %>%
+  mutate(across(starts_with("Q"), 
+                ~if_else(. >= 1 & . <= 10, ., NA_real_)))
+```
+
+### Creating Question Labels
+
+Aids graphical visualisation as there are 19 actions, and using question numbers may lead to confusion.
+
+```{r, message = FALSE, warning = FALSE}
+question_labels <- c(
+    "Q177" = "Claiming Unentitled Benefits",
+    "Q178" = "Avoiding Transport Fare",
+    "Q179" = "Stealing Property",
+    "Q180" = "Tax Cheating",
+    "Q181" = "Accepting Bribe",
+    "Q182" = "Homosexuality",
+    "Q183" = "Prostitution",
+    "Q184" = "Abortion",
+    "Q185" = "Divorce",
+    "Q186" = "Sex Before Marriage",
+    "Q187" = "Suicide",
+    "Q188" = "Euthanasia",
+    "Q189" = "Wife Beating",
+    "Q190" = "Child Beating",
+    "Q191" = "Violence Against Others",
+    "Q192" = "Terrorism",
+    "Q193" = "Casual Sex",
+    "Q194" = "Political Violence",
+    "Q195" = "Death Penalty")
+```
+
+**Converting the WVS to Long Format** (for analysis)
+
+```{r, message = FALSE, warning = FALSE}
+wvs_long <- wvs_qs %>%
+  pivot_longer(cols = Q177:Q195, names_to = "question", values_to="response")
+
+# adding question labels
+wvs_long <- wvs_long %>%
+  mutate(question_label = question_labels[question])
+```
+
+## 1.3 Exploring Measures of Difference
+
+### Descriptive Statistics
+
+To understand justification differences across all actions outlined in the World Values Survey, we begin by exploring descriptive statistics. Since survey responses are recorded on an ordinal scale from 1 ('Never Justifiable') to 10 ('Always Justifiable'), descriptive statistics help summarize the data effectively and facilitate comparisons between questions that elicit similar response patterns.
+
+#### The Arithmetic Mean: The Central Tendency or Average
+
+-   The mean can tell us the average justification score in a country, and for each question
+
+-   A higher mean (closer to 10) would suggest that respondents generally justify the action.
+
+-   A lower mean (closer to 1) would indicate the action is generally unjustifiable.
+
+-   If we compare means, we could show which behaviors are more widely accepted or condemned, and comparison across countries can reveal regional moral differences.
+
+**Arithmetic Mean**
+
+```{r, message = FALSE, warning = FALSE}
+# compute the mean for each question
+mean_data <- wvs_qs %>%
+  select(Q177:Q195) %>% 
+  summarise(across(everything(), mean, na.rm = TRUE)) 
+
+# convert to long format for plotting
+mean_long <- mean_data %>%
+  pivot_longer(cols = everything(), names_to = "question", values_to = "mean")  
+```
+
+```{r, echo = FALSE}
+# plot the means for each question
+ggplot(mean_long, aes(x = question_labels, y = mean, fill = question)) +
+  geom_bar(stat = "identity") +  
+  scale_y_continuous(breaks = 1:10) +
+  labs(
+    title = "Mean Scores for Each Question (Q177-Q195)",
+    x = "Question",
+    y = "Mean Score"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "none")
+```
+
+**Why Might We Hesitate to Use the Mean?**
+
+-   The mean is sensitive to outliers, and if some respondents provide responses at the extreme ends of the scale, or if there are multiple peaks in the distribution, the mean will be skewed.
+-   The mean cannot not show polarisation, as if 50% of respondents choose 1 (never justified) and the other 50% choose 10 (always justified), the mean would wrongly suggest neutrality.
+-   The mean does not take the measure of the variable being investigated (the scale is discrete, taking values 1 to 10), and so could return a value of 5.5 or 6.7 
+
+#### Skewness: A Measure of Asymmetry of a Distribution
+
+In a skewed distribution, the mean is unrepresentative of central tendency.
+
+```{r}
+skew_df <- wvs_qs %>%
+  summarise(across(Q177:Q195, ~skewness(., na.rm = TRUE))) %>%
+  pivot_longer(everything(), 
+               names_to = "question", 
+               values_to = "skewness")
+```
+
+```{r, echo = FALSE}
+ggplot(skew_df, aes(x = reorder(question, skewness), y = skewness, fill = skewness)) +
+  geom_col(show.legend = FALSE) +
+  geom_hline(yintercept = c(0.5, 1), linetype = "dashed", color = "red", alpha = 0.5) +
+  theme_minimal() +
+   scale_fill_viridis_c(option = "turbo") +
+  scale_x_discrete(labels = question_labels) + 
+  coord_flip() +
+  scale_y_continuous(limits = c(0, max(skew_df$skewness) * 1.1)) +  # starts at 0
+  labs(title = "Skewness of Responses",
+       subtitle = "Red lines at 0.5 (moderate skew) and 1 (high skew)",
+       x = "Question",
+       y = "Skewness")
+```
+
+-   All responses are highly right skewed; for all of the distributions the mode is 1
+-   `skewness`: 0.5 \< x \< 1 is moderately skewed, if x \> 1 then highly skewed
+
+This informs us that the mean is an ill-suited measure to the data.
+
+We can an intuitive grouping of actions – some questions have less consensus/are more controversial.
+
+#### The Median: The Middle Value in a Sorted List (50% of data is below it, 50% is above)
+
+-   The median is less sensitive to extreme values (outliers) than the mean.
+
+-   A lower median would mean that most people reject the action as unjustifiable.
+
+-   A higher median suggests widespread justification of the action.
+
+-   Together, if the mean and median differ significantly, we can conclude that the data is skewed.
+
+```{r}
+# calculate the median for each question
+median_data <- wvs_qs %>%
+  select(Q177:Q195) %>% 
+  summarise(across(everything(), median, na.rm = TRUE))
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# convert the data into long format for plotting
+median_long <- median_data %>%
+  pivot_longer(cols = everything(), names_to = "question", values_to = "median")  
+
+# plot the medians for each question
+ggplot(median_long, aes(x = question_labels, y = median, fill = question)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(breaks = 1:10) +
+  labs(
+    title = "Median Scores for Each Question (Q177-Q195)",
+    x = "Question",
+    y = "Median Score"
+  ) +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+```
+
+**Why Might We Hesitate to Use the Median?**
+
+-   The median only tells us the middle value, not how spread out the data is.
+
+-   If there are two peaks in the distribution, the median can be misleading as it may fall in the middle without reflecting extreme opinions.
+
+#### The Median + Upper (Q3) and Lower Quartiles (Q1), and the Interquartile Range (IQR)
+
+Investigating the Upper and Lower Quartiles may lead us to more insights into the data.
+
+-   These values can detect polarisation
+
+    -   A large IQR with a median near the middle suggests polarised views 
+
+    -   If Q1 and Q3 are close to the median, most people generally agree on a response.
+
+-   These values can enhance the analysis by showing variability and distribution shape
+
+    -   If the IQR is small, responses are consistent around the median.
+
+    -   If the IQR is large, opinions are more spread out, suggesting greater disagreement.
+
+-   Q1 and Q3 can detect skewness, and the direction of skewness 
+
+    -   If Q3 is further from the median than Q1, responses are positively skewed – respondents have provided more high scores
+
+    -   If Q1 is much further from the median than Q3, responses are negatively skewed – respondents have provided more low scores
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# create a box plot (without outliers & y-axis from 1 to 10 - following the scale)
+ggplot(wvs_long, aes(x = question, y = response)) +
+  geom_boxplot(outlier.shape = NA, fill = "gray80", color = "black") +  # remove outliers
+  scale_y_continuous(breaks = 1:10, limits = c(1, 10)) +  # remove y-axis below 1
+  labs(
+    title = "Distribution of Justification Scores for Each Question (Q177-Q195)",
+    x = "Question",
+    y = "Justification Score"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+**Why Might We Hesitate to Use These Values?**
+
+-   Use of these values can miss important nuances, like the shape or presence of multiple peaks.
+
+-   They don’t reflect how dispersed values are in the IQR, ignoring patterns in the distribution.
+
+#### The Mode: The Most Frequently Occurring Response for a Given Action
+
+-   The mode identifies the dominant opinion
+
+-   If multiple values appear frequently, the action might be controversial
+
+-   If there is a distinct mode value, opinions on the action can be assumed to be homogeneous
+
+**The Mode per Question**
+
+```{r}
+# function to compute the mode (from ChatGPT)
+compute_mode <- function(x) {
+  uniq_x <- unique(na.omit(x))  # remove NAs and get unique values
+  uniq_x[which.max(tabulate(match(x, uniq_x)))]  # return the most frequent value
+}
+
+mode_data <- wvs_qs %>%
+  summarise(across(Q177:Q195, compute_mode, .names = "mode_{.col}")) %>%
+  pivot_longer(cols = everything(), names_to = "question", values_to = "mode_value") %>%
+  mutate(question = stringr::str_remove(question, "mode_")) %>%
+  mutate(question_label = dplyr::recode(question, !!!question_labels))
+```
+
+```{r, echo = FALSE}
+# plot
+ggplot(mode_data, aes(x = question_label, y = mode_value, fill = factor(mode_value))) +
+  geom_bar(stat = "identity") +
+  scale_fill_viridis_d(option = "plasma") + 
+  theme_minimal() +
+  labs(title = "Most Frequent Response (Mode) Per Question",
+       x = "Question",
+       y = "Mode Value",
+       fill = "Mode") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12))
+```
+
+**Why Might We Hesitate to Use the Mode?**
+
+-   The mode ignores the frequency of other responses – only tells us the most common value
+
+-   If two or more values occur frequently (multimodal), the mode can be ambiguous.
+
+The mode is homogeneous across all questions and countries, so does not tell us anything meaningful about the data or differences in opinion across questions and countries. We gain a heightened understanding of the data through looking at the second and third most frequent values.
+
+**Second and Third Mode Functions**
+
+```{r}
+# function to compute the second highest response variable
+compute_second_mode <- function(x) {
+  x <- na.omit(x)  # remove NAs
+  if (length(x) < 2) return(NA)  # return NA if there aren't enough unique values
+  
+  freq_table <- table(x)  # count occurrences
+  sorted_values <- names(sort(freq_table, decreasing = TRUE))  # sort by frequency
+  
+  if (length(sorted_values) < 2) {
+    return(NA)  # return NA if there's only one unique value
+  } else {
+    return(as.numeric(sorted_values[2]))  # return second most frequent value
+  }
+}
+
+# function to compute the third highest response variable 
+compute_third_mode <- function(x) {
+  x <- na.omit(x)  # remove NAs
+  if (length(x) < 3) return(NA)  # return NA if there aren't enough unique values
+  
+  freq_table <- table(x)  # count occurrences
+  sorted_values <- names(sort(freq_table, decreasing = TRUE))  # sort by frequency
+  
+  if (length(sorted_values) < 3) {
+    return(NA)  # return NA if there are fewer than three unique values
+  } else {
+    return(as.numeric(sorted_values[3]))  # return third most frequent value
+  }
+}
+```
+
+**Mode, Second Mode, and Third Mode Values**
+
+```{r}
+wvs_mode <- wvs_long %>%
+  group_by(question) %>%
+  summarise(
+    mode = compute_mode(response),
+    second_mode = compute_second_mode(response),
+    third_mode = compute_third_mode(response)
+  )
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# reshape the data to long format for plotting
+wvs_mode_long <- wvs_mode %>%
+  pivot_longer(
+    cols = c(mode, second_mode, third_mode),
+    names_to = "mode_type",
+    values_to = "value"
+  )
+
+# plot the bar chart
+ggplot(wvs_mode_long, aes(x = question, y = value, fill = mode_type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_y_continuous(breaks = 1:10) +
+  labs(
+    title = "Modes of Responses by Question",
+    x = "Value",
+    y = "Question",
+    fill = "Mode Type"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 10),
+    legend.position = "bottom"
+  )
+
+# order questions from Q177 to Q195:
+wvs_mode_long$question <- factor(wvs_mode_long$question, 
+                               levels = paste0("Q", 177:195))
+
+
+```
+
+This graph provides an initial view of the most common responses, but to fully understand respondents' attitudes, we need to analyse the entire distribution of responses through relative frequency graphs.
+
+**Relative Frequency Graphs per Question**
+
+```{r}
+relative_freq_data <- wvs_long %>%
+  filter(response %in% 1:10) %>%  # ensure responses are within 1-10
+  group_by(question, response) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(question) %>%
+  mutate(percentage = (count / sum(count)) * 100)  # compute percentage
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(relative_freq_data, aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ question, scales = "free_y") +  # one panel per question
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses (1-10) Per Question",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10),
+        strip.text = element_text(size = 12))
+```
+
+Using the mode alone classifies each action as "Never Justifiable", but the relative frequency graphs reveal important differences in variation and distribution that the mode fails to capture. For instance, while the mode for Q185: Divorce is 1, only roughly 25% of respondents selected this option, indicating a more diverse range of opinions than the mode suggests. This limitation led us to explore distribution parameters for deeper analysis, enabling pairwise comparisons and comparative judgments as an alternative approach to answering our primary research question: "What Actions Can Be Justified?"
+
+#### The Variance: How Much Individual Responses Deviate From the Mean from 0 (agreement)
+
+-   A low variance means most people gave similar responses, indicating consensus.
+
+-   A high variance suggests disagreement – some justify the action while others reject it.
+
+    -   This may signal polarisation within a society regarding a particular action.
+
+-   It is harder to interpret than standard deviation (not in the unit of the original scores)
+
+-   It is influenced by extreme values as outliers can make variance large
+
+-   It is not useful alone as variance needs context – knowing how responses are spread is more meaningful than just knowing that they’re spread out.
+
+We will examine the possibility of using the standard deviation as a transformation of the variance.
+
+#### The Standard Distribution: A Measure of Dispersion in the Same Unit as the Original Scores (1-10)
+
+-   This measure is more interpretable than the variance
+
+-   A small standard deviation means responses are close to the mean – agreement.
+
+-   A large standard deviation means responses are widely spread out – mixed opinions.\
+    e.g. if a country's standard deviation for “Q184: Abortion” is low, most people either strongly justify or strongly reject bribery, and if it is high, opinions vary greatly within the population.
+
+```{r}
+# calculate the standard deviation for each question
+sd_data <- wvs_qs %>%
+  select(Q177:Q195) %>%
+  summarise(across(everything(), sd, na.rm = TRUE))
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# convert the data into long format for plotting
+sd_long <- sd_data %>%
+  pivot_longer(cols = everything(), names_to = "question", values_to = "sd")
+
+# olot the standard deviation for each question and annotate with SD values
+ggplot(sd_long, aes(x = question_labels, y = sd)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  geom_text(aes(label = round(sd, 2)), vjust = -0.5, size = 3.5) + 
+  labs(
+    title = "Standard Deviation of Justification Scores for Each Question (Q177-Q195)",
+    x = "Question",
+    y = "Standard Deviation"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+-   This value assumes normality, and so is most meaningful when data follows a normal distribution, but moral attitudes among a population often don’t.
+
+-   It does not show the direction of skewness towards justification or unjustification, just spread
+
+-   It is sensitive to outliers; extreme responses can inflate the standard deviation
+
+#### The Geometric Mean
+
+In face of the drawbacks of using the arithmetic mean, we explored the method of taking the mean of the log distribution then back-transforming by the exponential (`~exp()`) to give us the geometric mean of the original distribution. The geometric mean gives more weight to the common lower values. Since the arithmetic mean is pulled up by high values, this should provide a more representative average value.
+
+-   It is less sensitive to extreme values than the arithmetic mean because it multiplies values instead of summing them - this is particularly useful if some respondents rated actions as "Always Justifiable" (10) or "Never Justifiable" (1) in an extreme manner, distorting the arithmetic mean.
+
+-   We use the log transformation, as it rightly suggests the data is right-skewed
+
+-   The geometric mean naturally reduces skewness and gives a more balanced central tendency.
+
+```{r}
+geometric_means <- wvs_qs %>%
+  summarise(across(Q177:Q195, ~exp(mean(log(.), na.rm = TRUE)))) %>%
+  pivot_longer(cols = Q177:Q195,
+              names_to = "question",
+              values_to = "geometric_mean")
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# plot the geometric means for each question
+ggplot(geometric_means, aes(x = question_labels, y = geometric_mean, fill = question)) +
+  geom_bar(stat = "identity") +  
+  scale_y_continuous(breaks = 1:10) +
+  labs(
+    title = "Geometric Mean Scores for Each Question (Q177-Q195)",
+    x = "Question",
+    y = "Geometric Mean Score"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = "none")
+```
+
+In comparison to the Arithmetic Mean (the graph is shown under [The Arithmetic Mean: The Central Tendency or Average]), we see that respondents' action classifications generally lean towards the lower end of the scale, classifying most actions as unjustifiable. However, Divorce and Sex Before Marriage show higher values, suggesting greater acceptance or more variation in justification across respondents.
+
+```{r}
+mean_comparison <- geometric_means %>%
+  left_join(mean_long, by = "question") %>%
+  mutate(
+    mean_difference = mean - geometric_mean,
+    mean_ratio = mean / geometric_mean
+  )
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(mean_comparison, aes(x = reorder(question, mean_difference), y = mean_difference)) +
+  geom_col() +
+  coord_flip() +
+  theme_minimal() +
+  scale_x_discrete(labels = question_labels) +
+  labs(title = "Difference between Arithmetic and Geometric Means",
+       x = "Question",
+       y = "Mean Difference")
+```
+
+There is a large difference between the arithmetic and geometric means, as seen in actions like Sex Before Marriage, Homosexuality, and Divorce. This suggests there are outliers or a skewed distributions. The arithmetic mean is disproportionately affected by these extreme values, making it less reflective of the typical respondent's view, whereas the geometric mean provides a more balanced and robust measure of central tendency. For questions with lower mean differences (e.g. Terrorism and Stealing Property), the data appears to be more uniform, and while the arithmetic mean may not be as skewed, the geometric mean still provides a more consistent measure of central tendency that is less influenced by any remaining small outliers or variations. It mitigates the influence of extreme responses and better captures the central position of the distribution, particularly when the data is skewed.
+
+```{r}
+# combine the datasets and add normalise mean difference
+combined_analysis <- mean_comparison %>%
+  left_join(skew_df, by = "question") %>%
+  mutate(
+    # normalize mean difference to 0-1 scale
+    mean_diff_normalized = (mean_difference - min(mean_difference)) / 
+                          (max(mean_difference) - min(mean_difference))
+  )
+
+head(combined_analysis) %>% kable()
+```
+
+**Relationship between Skewness and Normalized Mean Difference**
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(combined_analysis, 
+       aes(x = skewness, y = mean_diff_normalized)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "blue", alpha = 0.2) +
+  geom_text_repel(aes(label = question_labels), size = 3) +
+  theme_minimal() +
+  labs(title = "Relationship between Skewness and Normalized Mean Difference",
+       x = "Skewness",
+       y = "Normalized Mean Difference",
+       subtitle = "Arithmetic Mean minus Geometric Mean (normalised)") +
+  theme(plot.title = element_text(size = 11))
+```
+
+The relationship between normalized mean difference (NMD) and skewness illustrates how the geometric mean offers a direct solution to the challenges posed by skewed distributions. As the geometric mean is less affected by extreme values, it provides a more balanced central tendency measure compared to the arithmetic mean. The observed negative relationship between NMD and skewness can be attributed to the 1-10 scale of the questions, where extreme values contribute to skewness, and the geometric mean mitigates the impact of these extremes, providing a more reliable comparison.
+
+**Combining All Descriptive Statistics**
+
+```{r}
+# getting second and third mode data to easily merge
+second_mode_data <- wvs_qs %>%
+  summarise(across(Q177:Q195, compute_second_mode, .names = "mode_{.col}")) %>%
+  pivot_longer(cols = everything(), names_to = "question", values_to = "second_mode_value") %>%
+  mutate(question = stringr::str_remove(question, "mode_")) %>%  # Clean question names
+  mutate(question_label = dplyr::recode(question, !!!question_labels))  # Map to labels
+
+third_mode_data <- wvs_qs %>%
+  summarise(across(Q177:Q195, compute_third_mode, .names = "mode_{.col}")) %>%
+  pivot_longer(cols = everything(), names_to = "question", values_to = "third_mode_value") %>%
+  mutate(question = stringr::str_remove(question, "mode_")) %>%  # clean question names
+  mutate(question_label = dplyr::recode(question, !!!question_labels))  # map to labels
+
+# merge statistics for all questions
+descriptive_statistics <- mean_long %>%
+  left_join(geometric_means, by = "question") %>%
+  left_join(median_long, by = "question") %>%
+  left_join(mode_data, by = "question") %>%
+  left_join(second_mode_data, by = "question") %>%
+  left_join(third_mode_data, by = "question") %>%
+  left_join(sd_long, by = "question") %>%
+  select(-question_label.x, -question_label.y, -question_label)
+
+# view the resulting dataframe
+head(descriptive_statistics) %>% kable()
+```
+
+## 1.4 Which Actions Are Justified?
+
+**Q177: Claiming Government Benefits to Which You Are Not Entitled**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q177
+descriptive_statistics %>% filter(question == "Q177") %>% select(-question) %>% kable()
+```
+
+For Q177, the mean response of 2.97 suggests that most respondents reject the action. The median score of 1 confirms that over half of the respondents place it at the lowest end of the scale. The mode of 1, with secondary and tertiary modes at 2 and 5 respectively, further indicate that the most common stance among respondents is disapproval, though some take a more neutral position. The geometric mean of 2.07, lower than the arithmetic mean, highlights the skewed nature of the responses, reinforcing the general tendency toward unjustifiability. Furthermore, the standard deviation suggests moderate variation, indicating that most respondents reject the action, but a subset expresses more leniency or neutrality. This is consistent in the literature as researchers found a similar mean (2.68), and additionally that income and being male is positively correlated with this action as opposed to age, education, and married status, all of which relate negatively [@navot_speed_2016]. Overall, these statistics place this action firmly within the lower half of the justification scale, with widespread disapproval with some variation in attitudes, as reflected in the relative frequency graph below.
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q177
+ggplot(relative_freq_data %>% filter(question == "Q177"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q177: Claiming Government Benefits to Which You Are Not Entitled",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q178: Avoiding a Fare on Public Transport**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q178
+descriptive_statistics %>% filter(question == "Q178") %>% select(-question) %>% kable()
+```
+
+For Q178, "Avoiding a Fare on Public Transport", the mean response of 2.84 suggests that the action is mostly rejected by respondents, a conclusion reinforced by the median of 1, indicating that over half of the responses fall at the lowest point on the scale. The mode of 1, (and secondary and tertiary modes at 2 and 5), further supports the dominant stance of disapproval, though a subset of respondents exhibits neutral or slightly more lenient views. The geometric mean of 2, notably lower than the arithmetic mean, highlights skewness in the distribution, emphasising that the majority lean toward unjustifiability. The standard deviation suggests moderate variation, indicating some divergence in opinion. Overall, while this action is largely deemed unjustifiable, the presence of secondary and tertiary modes, as well as the variation in responses, suggests that attitudes are not entirely uniform, as further illustrated in the relative frequency graph below.
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q178
+ggplot(relative_freq_data %>% filter(question == "Q178"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q178: Avoiding a Fare on Public Transport",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q179: Stealing Property**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q179
+descriptive_statistics %>% filter(question == "Q179") %>% select(-question) %>% kable()
+```
+
+For Q179, Stealing Property, the mean of 1.82 and median of 1 indicate overwhelming rejection, with the mode of 1 accounting for over 70% of responses (see the relative frequency graph displayed below), signaling a strong consensus. The geometric mean of 1.40, lower than the arithmetic mean, highlights skewness toward disapproval. Secondary and tertiary modes at 2 and 3 suggest minimal leniency, while the standard deviation of 1.79 reflects low variation. Overall, this action is widely deemed unjustifiable. This conclusion is supported by previous research, in which - out of questions 177, 178, 179, 180, and 181 - stealing property had the lowest mean and was thus viewed as the least justifiable among these actions [@navot_speed_2016. Further, this un-justifiability extends to stealing in the form of illegal downloading, in which South Asians and North Americans scored the behaviour higher in terms of criminality [@babb_stealing_2015].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q179
+ggplot(relative_freq_data %>% filter(question == "Q179"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q179: Stealing Property",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q180: Cheating on Taxes If You Have a Chance**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q180
+descriptive_statistics %>% filter(question == "Q180") %>% select(-question) %>% kable()
+```
+
+For Q180, the mean of 2.23 and median of 1 indicate strong rejection, alongside the mode of 1. The geometric mean of 1.64, lower than the arithmetic mean, shows skewness toward unjustifiability. Secondary and tertiary modes at 2 and 3 suggest some minor variation in responses, while the standard deviation of 2.15 reflects moderate dispersion. Overall, this action is largely deemed unjustifiable, though some respondents show slight divergence in opinion. This divergence may be due to the gender of the respondent as women are more disapproving of tax evasion [@torgler_gender_2010], and tax cooperation or “tax morale” has increased in Western Europe [@torgler_attitudes_2005].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q180
+ggplot(relative_freq_data %>% filter(question == "Q180"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q180: Cheating on Taxes If You Have a Chance",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q181: Someone Accepting a Bribe in the Course of Their Duties**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q181
+descriptive_statistics %>% filter(question == "Q181") %>% select(-question) %>% kable()
+```
+
+For Q181, the mean of 1.97 and median of 1 indicate strong disapproval, with the mode of 1 as the most common response. The geometric mean of 1.49, lower than the arithmetic mean, highlights skewness toward unjustifiability. Secondary and tertiary modes at 2 and 3 suggest minor variation, while the standard deviation of 1.92 reflects moderate spread. Overall, this action is widely considered unjustifiable, with limited divergence in responses. Despite the limited divergence observed, researchers have noted gender [@torgler_gender_2010] and religious differences in the acceptance of bribes, for example the highest justifiability scores were from Muslims, followed by Buddhists, Hindus, Jews, Christians and finally Baha’is [@mcgee_religion_2015].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q181
+ggplot(relative_freq_data %>% filter(question == "Q181"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q181: Someone Accepting a Bribe in the Course of Their Duties",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q182: Homosexuality**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q182
+descriptive_statistics %>% filter(question == "Q182") %>% select(-question) %>% kable()
+```
+
+For Q182, the mean of 4.05 suggests a mixed stance, though the median (3) indicates that most responses still lean toward unjustifiability. The mode of 1 remains to be the most common response, but the secondary mode of 10 suggests polarisation, with some respondents deeming the action "Always Justifiable". The geometric mean of 2.67, significantly lower than the arithmetic mean, highlights skewness toward lower justifiability scores, and a standard deviation of 3.41 reflects high variation, indicating divergent views rather than a clear consensus. Overall, opinions on this action appear divided, as both strong rejection and full justification present. The discrepancies observed in attitudes towards homosexuality are potentially caused by a multitude of socio-cultural factors. Some researchers put negative attitudes down to authoritarianism, inflexible religious beliefs/behaviours, importance of traditional sex roles, less contact with homosexuals [@furnham_cross-cultural_2009], religiosity, and belonging to “the former Soviet and Eastern Bloc, the Muslim World, and sub-Saharan Africa” [@roberts_changing_2019].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q182
+ggplot(relative_freq_data %>% filter(question == "Q182"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q182: Homosexuality",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q183: Prostitution**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q183
+descriptive_statistics %>% filter(question == "Q183") %>% select(-question) %>% kable()
+```
+
+For Q183, the mean of 3.05 suggests respondents generally lean toward unjustifiability, reinforced by the median of 1 and a mode of 1, indicating that the most common response is strong disapproval. However, the secondary mode of 5 suggests some neutrality, however the tertiary mode of 2 further supports a tendency toward rejection. The geometric mean of 2.12, notably lower than the arithmetic mean, highlights skewness toward lower justifiability scores. A standard deviation of 2.68 reflects moderate variation, suggesting that while most respondents consider prostitution unjustifiable, a subset holds more neutral or lenient views. Overall, this action is predominantly seen as unjustifiable, but responses indicate some divergence in opinion. Divergence may result from varying beliefs in marriage [@chon_gender_2015], “political conservatism, authoritarianism and religious fundamentalism”, all of which predict attitudes to prostitution, as well as religiosity, religious denominations and the “survivalist orientation” of one’s country [@stack_survivalism_2010].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q183
+ggplot(relative_freq_data %>% filter(question == "Q183"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q183: Prostitution",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q184: Abortion**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q184
+descriptive_statistics %>% filter(question == "Q184") %>% select(-question) %>% kable()
+```
+
+For Q184, the mean of 3.55 suggests a moderate rejection, though the median of 2 indicates most responses are closer to the lower end of the scale. The mode of 1 reflects strong disapproval is most common. However, the secondary and tertiary modes of 5 and 10 respectively indicate significant polarisation, with some respondents showing neutrality and others fully justifying the action. The geometric mean of 2.43, lower than the arithmetic mean, reflects skewness toward lower justification scores. The standard deviation of 2.99 shows high variation, suggesting that views on abortion are divided, with both strong disapproval and justification present in the responses. Overall, opinions on abortion are mixed, with a general tendency toward rejection but notable polarisation in attitudes. This polarisation is well-documented, researchers having noted on the “extreme positions” taken ranging from absolute bans to absolute rights [@tutic_groksa_students_2025]. Abortion is a controversial bioethical issue on which attitudes and even laws differ regionally and internationally. Positive abortion attitudes are more present in women, younger age groups, more educated, and less religious individuals [@loll_differences_2019]. At the cultural level, opposition to abortion is largely founded in religion, but is also related to countries with lower GDP [@tutic_groksa_students_2025].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q184
+ggplot(relative_freq_data %>% filter(question == "Q184"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q184: Abortion",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q185: Divorce**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q185
+descriptive_statistics %>% filter(question == "Q185") %>% select(-question) %>% kable()
+```
+
+For Q185, the mean of 5.01 and median of 5 indicate a neutral stance, but the mode of 1, representing 25% of responses, shows significant disapproval. The secondary mode of 5 suggests greater acceptance, while the tertiary mode of 10 reflects strong justification of divorce. The geometric mean of 3.70, lower than the arithmetic, highlights skewness toward lower justification scores. The high standard deviation of 3.20 suggests diverse opinions on divorce. It is more justifiable than any other action, though opinions remain polarised, with both strong disapproval and justification present, but investigating the relative frequency graph shows most responses, if not 1, "Never Justifiable", tend to be a value of 5 or above, making it reasonable to conclude that Divorce is a widely justifiable action. Evaluations and rates of divorce are noted to be “systematically linked to cultural values”, specifically the individualism-collectivism dimension, national wealth, and family values [@toth_divorce_2009], which explains the variation in justifiability scores.
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q185
+ggplot(relative_freq_data %>% filter(question == "Q185"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q185: Divorce",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q186: Sex Before Marriage**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q186
+descriptive_statistics %>% filter(question == "Q186") %>% select(-question) %>% kable()
+```
+
+For Q186, the mean of 4.66 and median of 5 suggest a neutral to moderate stance, with the mode of 1 indicating disapproval for almost 35% respondents. The secondary mode of 5 points to neutrality, while the tertiary mode of 10 reflects a strong justification for premarital sex. The standard deviation of 3.44 shows high variation, indicating a range of opinions. Overall, premarital sex is viewed with moderate justification, but responses are polarised, with both absolute disapproval and justification present. Disapproval of premarital sex is rooted in regulation of sexual behaviour [@broude_norms_1975], which differs between families, communities, countries, and cultures which aligns with the variety of opinions observed.
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q186
+ggplot(relative_freq_data %>% filter(question == "Q186"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q186: Sex Before Marriage",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q187: Suicide**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q187
+descriptive_statistics %>% filter(question == "Q187") %>% select(-question) %>% kable()
+```
+
+For Q187, the mean of 2.58 and median of 1 suggest strong disapproval of the action, with the mode of 1 representing the most common response is that suicide is "Never Justifiable", indicating a clear rejection of suicide. However, the secondary mode (5) shows some neutrality. The geometric mean of 1.82, significantly lower than the arithmetic mean, highlights skewness toward strong disapproval. The standard deviation of 2.44 suggests moderate variation, indicating some divergence in opinions. Overall, suicide is largely viewed as unjustifiable, though a minority holds more neutral or lenient views. Some researchers have posited differences in perspectives regarding suicide may lie along the individualism-collectivism dimension [@colucci_suicide_2012].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q187
+ggplot(relative_freq_data %>% filter(question == "Q187"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q187: Suicide",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q188: Euthanasia**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q188
+descriptive_statistics %>% filter(question == "Q188") %>% select(-question) %>% kable()
+```
+
+Euthanasia For Q188, the mean of 3.88 and median of 3 suggest moderate rejection, though the mode of 1 indicates a significant portion (\~40%) of respondents disapprove. The secondary mode of 5 and tertiary mode of 10 show polarisation, with some respondents taking a neutral stance or strongly justifying euthanasia. The standard deviation of 3.18 suggests high variation, indicating diverse opinions. In comparison to suicide (Q187), where the mean of 2.58 and median of 1 show strong disapproval, euthanasia shows more variation and polarisation. While both actions are viewed largely unjustifiable, euthanasia exhibits greater divergence in opinion, as seen in the higher mean, secondary mode of 5, and tertiary mode of 10, indicating a more divided view than the clear rejection of suicide. This is supported by the fact a previous analysis of the WVS suggested that “approximately half the population approved of euthanasia” [@karumathil_culture_2022]. The discrepancies in attitudes towards euthanasia can be traced back to both individual and cultural factors. Those who are older, live in rural regions, and of lower socioeconomic status generally possess more negative views regarding euthanasia [@tutic_groksa_students_2025]. Culturally, Christianity presents more “prohibitive” attitudes, and other religions also influence acceptability e.g., Hinduism and Islam [@karumathil_culture_2022], as well as traditional family values [@lee_cross-cultural_1996].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q188
+ggplot(relative_freq_data %>% filter(question == "Q188"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q188: Euthanasia",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q189: For a Man to Beat His Wife**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q189
+descriptive_statistics %>% filter(question == "Q189") %>% select(-question) %>% kable()
+```
+
+For Q189, the mean of 1.86 and median of 1 indicate strong disapproval, with the mode of 1 representing the most common response, reflecting clear rejection of this action. The secondary mode of 2 and tertiary mode of 3 suggest minor variation, with some respondents holding more lenient views. The standard deviation of 1.87 suggests moderate variation, showing that while the majority reject the action, there is some divergence in opinions, but overall, a man beating his wife is widely viewed by respondents as unjustifiable, with strong rejection yet some variation. This variation is observed in research as despite staunch opposition, some countries - “Mali, Serbia, Montenegro, Zambia, Burkina Faso, India, the Philippines, Rwanda, Egypt, and Algeria” - somewhat accept intimate partner violence [@tausch_multivariate_2019]. Disrespect towards traditional family values explained the most variance of acceptability [@tausch_multivariate_2019].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q189
+ggplot(relative_freq_data %>% filter(question == "Q189"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q189: For a Man to Beat His Wife",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q190: Parents Beating Children**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q190
+descriptive_statistics %>% filter(question == "Q190") %>% select(-question) %>% kable()
+```
+
+For Q190, the mean of 2.83 and median of 1 suggest strong disapproval, with the mode of 1 representing the most common response. However, the secondary mode of 5 and tertiary mode of 2 indicate slight polarisation, with a subset of respondents holding neutral and more lenient views. The standard deviation of 2.54 indicates moderate variation, suggesting diverse opinions on the issue. Compared to the action of a man beating his wife (Q189), where the mean of 1.86 and mode of 1 suggest a stronger consensus against the action, parents beating children shows more variation. While both actions are widely rejected, polarisation occurs in the case of parents beating children, as is reflected in the secondary mode of 5 and a higher standard deviation. This indicates that while the majority of respondents reject the action, there is greater divergence in opinions about whether it can ever be justified, whereas wife beating is overwhelmingly condemned. The increased justifiability observed is likely due to the fact that corporal punishment of children is either rare or a “frequent child-training technique in many societies”, predicted by “dependence on agriculture”, and political/economic complexity [@ember_explaining_2005]. The discrepancy observed between the justifiability of child and wife beating is that the former is associated with learning while the latter with punishment [@almosaed_violence_2004].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q190
+ggplot(relative_freq_data %>% filter(question == "Q190"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q190: Parents Beating Children",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q191: Violence Against Other People**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q191
+descriptive_statistics %>% filter(question == "Q191") %>% select(-question) %>% kable()
+```
+
+For Q191, the mean of 1.96 and median of 1 suggest strong disapproval, with the mode of 1 as the most common response. The secondary mode of 2 and tertiary mode of 3 indicate some leniency, but the majority still firmly reject the action. The standard deviation of 1.86 reflects low variation, but suggests slight divergence in opinions. Overall, this action is largely deemed unjustifiable. While violence against other people shares the strong rejection seen in wife beating (Q189), it shows slightly less variation than both wife beating and child beating (Q190), as indicated by its lower standard deviation. This suggests that while the action is widely condemned, there is less divergence in opinions on violence against others compared to the near-universal rejection of wife beating, and more diverse attitudes towards child beating, a fascinating insight from the data. This is despite the fact violence occurs within “every socio‐economic group, ideology, class, race and ethnic grouping” [@almosaed_violence_2004].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q191
+ggplot(relative_freq_data %>% filter(question == "Q191"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q191: Violence Against Other People",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q192: Terrorism as a Political, Ideological or Religious Means**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q192
+descriptive_statistics %>% filter(question == "Q192") %>% select(-question) %>% kable()
+```
+
+For Q192, the mean of 1.79 and median of 1 suggest strong disapproval, with the mode of 1 supporting this. The secondary mode of 2 and tertiary mode of 3 indicate some leniency, but the majority still firmly reject the action. The standard deviation of 1.79 shows slight variation, suggesting some divergence in opinions, though terrorism is largely viewed as unjustifiable. The observed variance may result from the fact that terrorism in itself is difficult to define [@martinez_justification_2022], and relative to perspectives [@lee_perception_2004]. Individual factors that may result in justification include youth, naivety, poor life satisfaction and health, and religion [@martinez_justification_2022]. The rejection of terrorism is consistently expressed, such as by the UN which states such acts have “no justification in our societies” [@martinez_justification_2022], which likely affects scores.
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q192
+ggplot(relative_freq_data %>% filter(question == "Q192"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q192: Terrorism as a Political, Ideological or Religious Means",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q193: Having Casual Sex**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q193
+descriptive_statistics %>% filter(question == "Q193") %>% select(-question) %>% kable()
+```
+
+For Q193, "Having Casual Sex", the mean of 3.56 and median of 2 suggest moderate rejection, with the mode of 1 indicating strong disapproval at roughly 40% of responses. The secondary mode of 5 and tertiary mode of 10 reveal high polarisation, with some taking a neutral stance or fully justifying the action. The standard deviation of 3.04 indicates high variation, suggesting a diverse range of opinions on casual sex, with some respondents expressing more lenient or neutral views. Overall, while the action is viewed as moderately unjustifiable, there is significant variation in attitudes, rendering the classification of engaging in casual sex as justifiable, somewhat ambiguous.
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q193
+ggplot(relative_freq_data %>% filter(question == "Q193"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q192: Having Casual Sex",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q194: Political Violence**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q194
+descriptive_statistics %>% filter(question == "Q194") %>% select(-question) %>% kable()
+```
+
+For Q194, "Political Violence", the mean of 1.99 and median of 1 suggest strong disapproval, alongside the mode of 1. The secondary mode of 2 and tertiary mode of 3 indicate slight leniency, but it is still majorly rejected. The standard deviation of 1.92 suggests slight variation, indicating some divergence in opinions, though political violence is largely viewed as unjustifiable. In comparison, to Q192: "Terrorism as a Political, Ideological or Religious Means", there is a similar pattern, with a low mean of less than 2. The secondary mode of 2 and tertiary mode of 3 also suggest similarly suggest slight leniency, and the standard deviation of 1.79 indicates slight variation. While both actions are strongly disapproved, terrorism tends to show slightly stronger disapproval overall, compared to political violence, which displays a bit more variation in attitudes.
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q194
+ggplot(relative_freq_data %>% filter(question == "Q194"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q192: Political Violence",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+**Q195: Death Penalty**
+
+```{r, echo = FALSE}
+# the descriptive statistics for Q195
+descriptive_statistics %>% filter(question == "Q195") %>% select(-question) %>% kable()
+```
+
+For Q195, the mean of 4.10 and median of 3 suggest slight rejection, with the mode of 1, as is the same across all actions, indicating strong disapproval. The secondary mode of 5 and tertiary mode of 10 reveal polarisation, with some respondents being more neutral or fully justifying the action. The standard deviation of 3.18 reflects high variation, indicating diverse opinions on the death penalty, with a general trend toward moderate rejection but substantial divergence in attitudes. The polarity of opinions about capital punishment is a well-documented phenomenon. Those from abolitionist countries are less supportive of it than their retentionist counterparts [@mccarthy_attitudes_2024].
+
+```{r, echo = FALSE}
+# the relative frequency graph for Q195
+ggplot(relative_freq_data %>% filter(question == "Q195"), aes(x = factor(response), y = percentage, fill = factor(response))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal() +
+  labs(title = "Relative Frequency of Responses for Q195: Death Penalty",
+       x = "Response Value",
+       y = "Percentage (%)",
+       fill = "Response") +
+  theme(axis.text.x = element_text(size = 10))
+```
+
+In examining the actions outlined in the World Values Survey, we observe varying levels of justification across different issues. Strong disapproval for actions like claiming unentitled government benefits (Q177) and stealing property (Q179) juxtapose significantly polarised actions, such as homosexuality (Q182), divorce (Q185), and abortion (Q184), likely reflecting cultural and regional differences.
+
+Furthermore, many actions, while semantically aligned, show meaningful differences in societal perception; for instance, Q192 (Terrorism) and Q194 (Political Violence) both relate to violent acts and receive strong rejection, yet political violence demonstrates more variation in opinions compared to terrorism. Similarly, Q189 (wife beating) and Q190 (child beating) show clear condemnation across the dataset, but child beating exhibits more variation than wife beating. The question of euthanasia (Q188) reveals a more divided view, with significant variation in responses. While a substantial portion of respondents express disapproval, a notable minority justifies euthanasia under certain circumstances, leading to greater polarisation in opinions. This contrasts with suicide (Q187), which receives more uniformly negative responses across the dataset.
+
+Overall, certain actions exhibit a clear consensus regarding their unjustifiability, while others reveal substantial variation and polarisation, reflecting the diverse perspectives on controversial issues. These differing viewpoints will be explored further under the section \[Are There Regional Differences When It Comes to This?\], where we will investigate how and if regional contexts influence the justification of actions across different countries.
+
+## 1.5 Clustering Actions
+
+In the process of determining the level of justification of 19 actions, clustering provides a structured way to group actions based on their justification patterns across the entire population. By applying clustering methods to our research question – “What Actions Can Be Justified? – clustering helps identify broader patterns in moral reasoning and reveals which actions tend to be justified or rejected together.
+
+Following our initial exploratory data analysis, we suggest that the actions listed could be grouped qualitatively into three broad groups; individual liberties, economics/corruption and violent acts. This is also pointed to by the differing average distributions for each question, as evidenced by the skewness values observed in 1.3. We will explore the relationships between the questions first through comparing Spearman correlations, and then Jensen-Shannon Divergence, to better understand possible groupings of actions based on their response patterns.
+
+### 1.5.1 Spearman Correlations
+
+Spearman's correlation provides a suitable method for clustering the questions into meaningful groups. As a non-parametric approach it does not assume a normal distribution, so is suitable for calculating similarity across our skewed data. It is also appropriate for our likert-type 1-10 justifiability scales, handling ordinal data effectively, and is resistant to outliers.
+
+**Clustering by Spearman Correlation**
+
+```{r}
+cor_matrix <- cor(wvs_qs[, c("Q177", "Q178", "Q179", "Q180", "Q181", 
+                           "Q182", "Q183", "Q184", "Q185", "Q186",
+                           "Q187", "Q188", "Q189", "Q190", "Q191",
+                           "Q192", "Q193", "Q194", "Q195")],
+                  method = "spearman",  # Spearman correlation
+                    use = "pairwise.complete.obs")
+
+dist_matrix <- as.dist(1 - cor_matrix)
+
+hc <- hclust(dist_matrix, method = "complete")
+
+dend <- as.dendrogram(hc)
+dend <- set(dend, "labels", question_labels[labels(dist_matrix)])
+
+
+plot(hc, 
+     hang = -1, 
+     labels = question_labels[labels(dist_matrix)])
+
+
+```
+
+**Outcome at `k = 4`**
+
+1.  Claiming Unentitled Benefits, Avoiding Transport Fare, Stealing Property, Tax Cheating, Accepting Bribe, Wife Beating, Violence Against Others, Terrorism, Political Violence
+2.  Homosexuality, Prostitution, Abortion, Divorce, Sex Before Marriage, Suicide, Euthanasia, Casual Sex
+3.  Child Beating
+4.  Death Penalty
+
+### 1.5.2 Divergence Measures for Clustering
+
+#### Kullback-Leibler Divergence
+
+Kullback-Leibler divergence is a measure of how much a model probability distribution, Q, is different from a true probability distribution, P. In this case, we could pairwise compare two distributions of justification scores and determine similarity or difference, leaving us with clusters which show actions which seem to converge on how justified, unjustified, or polarised respondents are towards them. Jensen-Shannon divergence builds on this, and is discussed below.
+
+#### **Jensen-Shannon Divergence**
+
+Based on the Kullback-Leibler measure, Jensen-Shannon divergence is a symmetric and smoothes version of KL divergence which compares Q and P via an average distribution, M. It has a finite value in the range \[0, 1\], resulting in it being easier to interpret than KL due to its use of relative entropy. In this case, the similarity of two distributions is greater when the JS distance is closer to zero. Therefore, we have decided to continue with JS divergence, and create a pairwise matrix.
+
+**Generate Probability Distributions for Each Question**
+
+```{r, message = FALSE, warning = FALSE}
+selected_questions <- wvs_long %>%
+  filter(response %in% 1:10) %>%  # keep valid response range (1-10)
+  group_by(question, response) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(question) %>%
+  mutate(probability = count / sum(count))  # convert to probability
+```
+
+**Computing Jensen-Shannon Divergence**
+
+```{r, message = FALSE, warning= FALSE}
+# unique question pairs
+question_list <- unique(wvs_long$question)
+
+# compute pairwise Jensen-Shannon Divergence (JS)
+js_results <- expand.grid(Q1 = question_list, Q2 = question_list) %>%
+  filter(Q1 != Q2) %>%
+  rowwise() %>%
+  mutate(JSD = {
+    prob_P <- selected_questions %>%
+      filter(question == Q1) %>%
+      select(response, probability) %>%
+      right_join(data.frame(response = 1:10), by = "response") %>%
+      replace_na(list(probability = 0)) %>%
+      pull(probability)
+    
+    prob_Q <- selected_questions %>%
+      filter(question == Q2) %>%
+      select(response, probability) %>%
+      right_join(data.frame(response = 1:10), by = "response") %>%
+      replace_na(list(probability = 0)) %>%
+      pull(probability)
+    
+    # compute Jensen-Shannon Divergence
+    JSD(rbind(prob_P, prob_Q), unit = "log2")
+  })
+```
+
+**Creating a Matrix**
+
+```{r}
+# reshaping js_results into a matrix form
+js_matrix <- dcast(js_results, Q1 ~ Q2, value.var = "JSD")
+
+# converting the matrix into a distance object (for clustering)
+js_dist <- as.dist(js_matrix[, -1])  # remove the row names (questions themselves)
+
+```
+
+#### (Agglomerative) Hierarchical Clustering w/Jensen-Shannon Divergence
+
+Hierarchical Clustering is a machine learning algorithm that groups data into a tree of clusters. Using the agglomerative method, each question is initially its own cluster and the algorithm merges the two most similar clusters (based on the smallest JS distance), and this is repeated until all questions are in a single cluster, and this is displayed in a dendrogram. Our denogram is displayed below.
+
+```{r}
+# perform hierarchical clustering using JSD distance matrix
+hc <- hclust(js_dist, method = "complete")
+
+# replace default labels (Q177, Q178, ...) with question labels
+hc$labels <- question_labels[hc$labels]
+
+# plot the dendrogram with question labels
+plot(hc, main = "Hierarchical Clustering of WVS Questions Based on JSD",
+     xlab = "Questions", ylab = "Height", cex = 0.7, 
+     labels = hc$labels)
+```
+
+After performing hierarchical clustering, we can cut the dendrogram to define the number of clusters, where each cluster contains questions that are most similar to each other in terms of their response distributions. Here, we determined the optimal number of clusters to be four, aligning with the three broad groups previously suggested, with a single cluster containing “Divorce”, which from the dendrogram is a stark outlier.
+
+```{r}
+# perform hierarchical clustering
+hc <- hclust(js_dist, method = "complete")
+
+# cut the dendrogram into clusters
+num_clusters <- 4
+clusters <- cutree(hc, k = num_clusters)
+
+# ensure the questions have labels
+hc_labels <- names(question_labels)[match(hc$labels, names(question_labels))] 
+hc$labels <- question_labels[hc_labels] 
+
+# create a data frame of the clustered questions
+clustered_questions <- data.frame(Question = hc$labels, Cluster = clusters)
+```
+
+**Outcome at `k = 4`**
+
+1.  Claiming Unentitled Benefits, Avoiding Transport Fare, Prostitution, Suicide, Child Beating
+
+2.  Stealing Property, Tax Cheating, Accepting Bribe, Wife Beating, Violence Against Others, Terrorism, Political Violence
+
+3.  Homosexuality, Abortion, Sex Before Marriage, Euthanasia, Casual Sex, Death Penalty
+
+4.  Divorce
+
+#### **DBSCAN**
+
+DBSCAN (Density-Based Spatial Clustering of Applications with Noise) is a machine learning algorithm that groups data points based on their density [@zhang_comparison_2020]. Unlike hierarchical clustering, DBSCAN does not require one to specify the number of clusters, k, in advance. Instead, it uses two key parameters: eps (the maximum distance between two points to be considered neighbors) and minPts (the minimum number of points required to form a cluster). The algorithm identifies regions of high density as clusters and labels points in low-density regions as noise or outliers. However, the choice of parameters is critical, as they directly influence the resulting clusters. This is a problem we ran into in our attempt to cluster using DBSCAN, and our method of dealing with this issue is detailed below.
+
+```{r}
+js_matrix_numeric <- js_matrix[,-1]  # remove the first column (question labels)  
+diag(js_matrix_numeric) <- 0  # replace diagonal NAs with 0 (pairwise comparison shows no difference)
+
+# finding the point of maximum curvature (to get eps value)
+js_matrix_num <- as.matrix(js_matrix_numeric)
+distances <- sort(js_matrix_num)  # sort distances
+slope <- diff(distances)  # first derivative (slope) - difference between consecutive distances
+curvature <- diff(slope)  # second derivative (curvature) - difference between consecutive slopes
+max_curvature_index <- which.max(abs(curvature))  # find the index of maximum curvature
+max_curvature_value <- distances[max_curvature_index + 1]  # value at that point (because of diff)
+
+dbscan::kNNdistplot(js_matrix_numeric, k = 4) +
+  abline(h = max_curvature_value, lty = 2, col = "red") +
+  scale_y_continuous(n.breaks = 40)  # Adjust y-axis ticks
+```
+
+We found the point of maximum curvature to be 0.1775979, however found difficulty when running DBSCAN using this value as it returns one cluster, likely due to the `eps` value being large.
+
+```{r}
+db <- dbscan::dbscan(js_matrix_numeric, eps = 0.1775979, minPts = 3)
+fviz_cluster(db, data = js_matrix_numeric, stand = FALSE,
+             ellipse = FALSE, show.clust.cent = FALSE,
+             geom = "point", ggtheme = theme_bw(base_size=20))
+```
+
+**Finding the Optimal `eps` Value**
+
+As the maximum point of curvature is typically taken as the `eps` value, but this resulted in one cluster, we used trial and error assigning `eps` based on the 90th percentile of the curvature values.
+
+```{r}
+# threshold based on the 90th percentile of the curvature values
+threshold <- quantile(abs(curvature), 0.90)
+
+# identify the indices of curvature values above the threshold
+sharp_increase_indices <- which(abs(curvature) > threshold)
+
+# identify the corresponding distances for these points (index + 1 due to diff)
+sharp_increase_values <- distances[sharp_increase_indices + 1]
+
+# plot the kNN distances
+library(ggplot2)
+p <- dbscan::kNNdistplot(js_matrix_numeric, k = 3) +
+  scale_y_continuous(n.breaks = 40)
+
+# add the first abline for the maximum curvature (already identified)
+p <- p + abline(h = max_curvature_value, lty = 2, col = "red")
+
+# add additional ablines for other sharp increases
+for (i in 1:length(sharp_increase_values)) {
+  p <- p + abline(h = sharp_increase_values[i], lty = 2, col = "blue")
+}
+```
+
+**Determining an `eps`** **Value** Using minPts = 4 (as it is twice the number of dimensions), and eps = 0.08, we gain three clusters, and two “noise” points. The outcome of which aligns with our intuitive grouping, and with hierarchical clustering.
+
+```{r}
+# Create a vector of the question labels (Q177 to Q195)
+question_labels <- c("Claiming Benefits", "Avoiding Transport Fare", "Stealing Property", 
+                     "Tax Cheating", "Accepting Bribe", "Homosexuality", "Prostitution", 
+                     "Abortion", "Divorce", "Sex Before Marriage", "Suicide", "Euthanasia", 
+                     "Wife Beating", "Child Beating", "Violence Against Others", "Terrorism", 
+                     "Casual Sex", "Political Violence", "Death Penalty")
+
+# Run DBSCAN
+db <- dbscan::dbscan(js_matrix_numeric, eps = 0.08, minPts = 4)
+
+# Plot DBSCAN results
+library(factoextra)
+fviz_cluster(db, data = js_matrix_numeric, stand = FALSE,
+             ellipse = FALSE, show.clust.cent = FALSE,
+             geom = "point", ggtheme = theme_bw(base_size = 20))
+
+```
+
+**Outcome at `eps` = 0.08 and `minPts` = 4**
+
+1.  Claiming Unentitled Benefits, Avoiding Transport Fare, Prostitution, Suicide, Child Beating
+
+2.  Stealing Property, Tax Cheating, Accepting Bribe, Wife Beating, Violence Against Others, Terrorism, Political Violence
+
+3.  Homosexuality, Abortion, Euthanasia, Casual Sex, Death Penalty
+
+Noise: Divorce, Sex Before Marriage
+
+### Discussion of the Final Clusters
+
+The Spearman correlation, hierarchical clustering, and DBSCAN provide valuable insights into how different actions are grouped based on their justification distributions. Using Jensen-Shannon divergence, hierarchical clustering with k = 4 revealed four distinct clusters, with Divorce standing out as an outlier, reinforcing its unique position in moral attitudes compared to other actions. However, Spearman correlation identifies Child Beating and the Death Penalty as 'outliers' (as they are in their own distinct cluster). Meanwhile, DBSCAN, which identifies clusters based on density rather than predefined groupings, produced three main clusters with two noise points, one of which being Divorce, aligning with our intuition and hierarchical results. The consistency between hierarchical clustering and DBSCAN suggests that the identified groupings reflect meaningful patterns in justification attitudes rather than being an outcome due to a particular clustering approach. The presence of noise points in DBSCAN highlights actions with highly variable or ambiguous justifiability, which may indicate deep societal divides or cultural variation. These findings set the stage for further analysis into regional variations and socio-cultural influences on moral attitudes.
+
+# 2. Are There Regional Differences When It Comes to This?
+
+This section aims to investigate regional differences in values, based on the justifiability across countries of the set of actions discussed in Section 1, in order to answer the question.
+
+In answer to the question “Can we set universally acceptable criteria for what is right, just, good, or evil for all human behaviour and judgment?” researchers stipulate that beliefs, standards, norms, and values differ cross-culturally [@lee_perception_2004], therefore the justifiability of the aforementioned “dishonest or illegal activities” [@torgler_gender_2010] should vary regionally, between different countries and cultures. For example, the “individualism-collectivism dimension” has been applied in explaining and predicting attitudinal and behavioural differences in which individualistic countries - like Australia, USA, and Western Europe [@green_variation_2005] - sanction the pursuit of self-interest, suggesting leniency regarding these actions, whereas “collectivist societies” adhere more to traditional social conventions, therefore would likely disapprove [@toth_divorce_2009]. However, countries and cultures differ on a multitude of dimensions, such as religiosity and religious beliefs [@roberts_changing_2019], political liberalism and conservatism [@mcgee_religion_2015], national wealth [@stack_survivalism_2010], and family values [@lee_cross-cultural_1996] [@toth_divorce_2009], therefore the potential regional differences in attitudes to Q177-195 are arguably more complex than simple individualism-collectivism classifications.
+
+**Methodology**
+
+To conduct comparative analysis at the country level requires a metric to represent the aggregate responses from within countries. As discussed previously, we recognise the limitations of these averages, especially in the presence of such highly skewed data. As such, in Section 2.1 we first work with the geometric mean of the distribution of responses for each question per country, which provides a partial remedy to the misrepresentation of the arithmetic mean. This allows for clear initial visualisation of national variation, which we plot, for two questions, onto a world map to better understand how the responses vary by geographic region.
+
+Following this, in Section 2.2, we calculate the Jensen-Shannon Divergence (JSD) for each country-question pair, which allows for comparisons using the entire distributions of responses per country. JSD pairs are used to establish (dis)similarities between countries, then fed into a hierarchical clustering to group countries by response patterns. We fit these clusters to a world map and discuss how our observations regarding regional difference fit with the regional values literature.
+
+Finally, we provide some preliminary explanations for potential regional differences in justifiability, by testing the significance of several predictor variables also drawn from the WVS survey.
+
+## 2.1 Country Means
+
+The clearest way to observe inter-national variation is comparison of national average figures. Therefore, we begin with an overview of mean national responses to the justifiability of each action.
+
+### 2.1.1 Geometric Mean per Question, per Country
+
+```{r, message = FALSE, warning = FALSE}
+geometric_means <- wvs_qs %>%
+  group_by(country_name) %>%
+  mutate(B_COUNTRY_ALPHA = first(B_COUNTRY_ALPHA)) %>%
+  summarise(
+    B_COUNTRY_ALPHA = first(B_COUNTRY_ALPHA), 
+    across(Q177:Q195, ~exp(mean(log(.), na.rm = TRUE)))
+    )
+  # Create long format df 
+geometric_means_long <- geometric_means %>% 
+  pivot_longer(cols = -c(country_name, B_COUNTRY_ALPHA),
+              names_to = "Question",
+              values_to = "GEOMETRIC_MEAN")
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.width=15, fig.height=10}
+
+geom_mean_plot <- ggplot(geometric_means_long, aes(x = country_name, y = Question, fill = GEOMETRIC_MEAN,
+                          text = paste("Country:", country_name,
+                                     "\nQuestion:", question_labels,
+                                     "\nScore:", round(GEOMETRIC_MEAN, 0)))) +
+  geom_tile() +
+  scale_fill_viridis_c(limits = c(1, 10)) +
+  scale_y_discrete(labels = question_labels) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 5)
+  ) +
+  labs(title = "Justifiability Scores by Country and Question",
+       fill = "Score (1-10)", 
+       x = "Country")
+
+# Convert to interactive plot with dimensions specified in ggplotly
+int_geom_mean_plot <- ggplotly(geom_mean_plot, tooltip = "text", 
+                           width = 800, 
+                           height = 500)
+
+int_geom_mean_plot
+```
+
+This plot captures the mean justifiability of each action, with countries plotted along the x-axis. Responses show significant divergence between countries, particularly for certain questions, helping to identify moral consensus and divergence across countries for each action. Actions such as "Violence Against Others" show low justification scores across most countries, indicating broad societal disapproval. Conversely, actions like "Divorce" exhibit higher justification scores in some countries but remain controversial in others (e.g. Nigeria, Kyrgyzstan). Whilst the clearest patterns are the central horizontal grouping of more 'controversial' questions discussed in Section 1, the vertical patterns show, for instance, that Pakistan has very low scores (1 - 2) for all questions, whereas Germany has mean justifiability of up to 8 for some questions. Germany is more supportive of various actions, having experienced an increase in support for euthanasia [@tutic_groksa_students_2025]. Similarly, homosexuality has experienced a statistically significant “upswing” in its acceptance in Western countries however not in the “Muslim World” [@roberts_changing_2019] which includes Pakistan. This national variation provides motivation for regional comparisons especially with respect to the set of high-variance questions, which appear to generate significant variation across nationalities.
+
+Some cells display `NaN` (Not a Number) values, indicating missing data for certain countries on specific questions. These missing values could arise due to survey non-response captured by our data cleaning, or the exclusion of certain questions in some countries (Wife Beating is not asked in the UK, for instance). As mentioned, we will not impute data. To ensure meaningful comparisons we will note these values, keeping them in the data when they do not impact certain analyses, but noting this in our results.
+
+### 2.1.2 National-Global Mean Divergence
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.width=15, fig.height=8}
+  
+mean_deviation <-  geometric_means_long %>% 
+  group_by(Question) %>%
+  mutate(global_mean = mean(GEOMETRIC_MEAN, na.rm = TRUE)) %>% # Global mean 
+  mutate(deviation = GEOMETRIC_MEAN - global_mean) %>%         # Deviation from global mean
+  ungroup()
+
+# Create the plot with centered values
+mean_dev_plot <- ggplot(mean_deviation, 
+            aes(x = country_name, 
+                y = Question, 
+                fill = deviation,
+                text = paste("Country:", country_name,
+                           "\nQuestion:", question_labels,
+                           "\nDeviation:", round(deviation, 0),
+                           "\nActual score:", round(GEOMETRIC_MEAN, 0),
+                           "\nGlobal mean:", round(global_mean, 0)))) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", 
+                      midpoint = 0) +
+  scale_y_discrete(labels = question_labels) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 8)
+  ) +
+  labs(title = "Deviation from Global Mean Justifiability Scores by Country",
+       fill = "Deviation from\nglobal mean", 
+       x = "Country")
+
+# Convert to interactive plot
+int_mean_dev_plot <- ggplotly(mean_dev_plot, tooltip = "text", 
+                           width = 800, 
+                           height = 500)
+
+int_mean_dev_plot
+```
+
+This plot utilises the same data from the previous, but highlights more starkly the relative differences between countries. Following the vertical patterns emphasises positive and negative deviations concentrated to certain countries. Again, Pakistan is has -2 or -3 deviation from global average for several questions, whilst Germany is generally positively deviated from the global average.
+
+### 2.1.3 Mapping Means
+
+A helpful way to explore the potential regional patterns in this national variation is to examine differences geographically. For this, we use the `maps` and `countrycode` packages to match the `B_COUNTRY_CODE` variable to internationally recognised `iso3c` codes and retrieve national latitude and longitudinal values. Using the world map from `maps` we plot the national mean scores for the justifiability of homosexuality and the death penalty; two questions with significant national variation in responses.
+
+#### **Homosexuality**
+
+```{r, warning = FALSE}
+# Exclude territories without values in world map data, that are not present in the WVS survey 
+territories_to_exclude <- c("Barbuda", "Canary Islands", "Micronesia", 
+                            "Heard Island", "Chagos Archipelago", "Siachen Glacier",
+                            "Saint Martin", 
+                            "Bonaire", "Sint Eustatius","Saba", "Madeira Islands", 
+                            "Azores", "Ascension Island", "Grenadines", 
+                            "Virgin Islands", "Kosovo")
+
+
+# Country codes
+world_map <- map_data("world") %>%
+  filter(!region %in% territories_to_exclude) %>%
+  mutate(iso3c = countrycode(region, 
+                            origin = 'country.name',
+                            destination = 'iso3c'))
+
+# Joining justification values with the map data
+map_data <- left_join(world_map, geometric_means, 
+                      by = c("iso3c" = "B_COUNTRY_ALPHA"))
+
+# Map 
+ggplot(map_data, aes(x = long, y = lat, group = group, fill = Q182)) +
+  geom_polygon(color = "white", size = 0.1) +
+  #scale_fill_viridis_c() +  # or another color scale
+  scale_fill_gradientn(colors = c("#ff4242", "#ffd449", "#4caf50")) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(fill = "",
+       title = "Where Is Homosexuality Considered Justified?")
+```
+
+Homosexuality, whilst broadly justified across the Western World or Global North countries; the USA, Canada, the UK, northern Europe, Australia and New Zealand, is considered less justifiable across South American countries, very unjustifiable across Russia and Asia, and is often never justified on average in the African countries surveyed. The acceptance of homosexuality has risen across many Western countries [@roberts_changing_2019]
+
+#### **Death Penalty**
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+
+# Country codes
+world_map <- map_data("world") %>%
+  filter(!region %in% territories_to_exclude) %>%
+  mutate(iso3c = countrycode(region, 
+                            origin = 'country.name',
+                            destination = 'iso3c'))
+
+# Joining justification values with the map data
+map_data <- left_join(world_map, geometric_means, 
+                      by = c("iso3c" = "B_COUNTRY_ALPHA"))
+
+# Map 
+ggplot(map_data, aes(x = long, y = lat, group = group, fill = Q195)) +
+  geom_polygon(color = "white", size = 0.1) +
+  #scale_fill_viridis_c() +  # or another color scale
+  scale_fill_gradientn(colors = c("#ff4242", "#ffd449", "#4caf50")) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(fill = "",
+       title = "Where Is the Death Penalty Considered Justified?")
+```
+
+Retentionist nations (e.g., China) are more accepting and supportive of capital punishment compare to their retentionist counterparts (e.g., Germany) [@mccarthy_attitudes_2024]. However, the degree of support does vary within the retentionist-abolitionist groups, for example, the UK is an abolitionist nature which shows greater support for the death penalty, whereas Indonesia, a retentionist nation, is more "critical" of the practice [@mccarthy_attitudes_2024].
+
+## 2.2 National Divergence
+
+Since grouping countries based on a single mean value hides a large amount of variation in the underlying data, and might wrongly characterise certain countries attitudes, we turn to the JS Divergence (explained in more detail in Section 1.6.2) to measure the similarity between the national distributions.
+
+Based on our findings in Section 1, we are interested in the regional variation in responses to a set of questions, so will take the average JS divergence across these questions per country. For this analysis, we focus on a set of (broadly defined) issues of individual autonomy or 'post-materialist values' (Inglehart, 2009) represented within the questions, as opposed to those focussed on economic or violent actions, these are:
+
+> Homosexuality
+>
+> Abortion
+>
+> Divorce
+>
+> Sex before marriage
+>
+> Suicide
+>
+> Euthanasia
+>
+> Casual sex
+
+These are also the questions with the clearest national variation and least uniform distributions, which show the most meaningful variation across countries; we also expect responses to them to move broadly in the same direction, as they appear to act together (albeit not perfectly) as an indicator of progressive liberal individualism and secular attitudes.
+
+Though it would be interesting to compare country distributions across all questions individually, we do not have the space in this paper to do so. If we included the whole set of questions then distributions moving in different directions, representing attitudes to different dimensions, would make comparisons less meaningful.
+
+### 2.2.1 Calculate JS Divergence
+
+**Prepare Data for Calculation**
+
+```{r, warning=FALSE }
+
+# Select questions for similarity calculation 
+
+lib_qs <-  c(
+    "Q182", # = "Homosexuality"
+    "Q184", # = "Abortion"
+    "Q185", # = "Divorce"
+    "Q186", # = "Sex Before Marriage"
+    "Q187", # = "Suicide"
+    "Q188", # = "Euthanasia"
+    "Q193"  # = "Casual Sex"
+)
+    
+#all_qs <- c("Q177","Q178","Q179","Q180","Q181","Q182","Q183","Q184","Q185","Q186",
+#            "Q187","Q188","Q189","Q190","Q191","Q192","Q193","Q194","Q195")
+
+# df for JS
+wvs_select <- wvs_qs %>% 
+  select(country_name, B_COUNTRY_ALPHA, lib_qs)
+
+# Long df for JS 
+wvs_select_long <- wvs_select %>% 
+  pivot_longer(
+    cols = Q182:Q193, 
+    names_to = "question", 
+    values_to = "response"
+    )
+```
+
+Calculate probability distributions by country and question
+
+```{r}
+ctry_dstr <- wvs_select_long %>%
+  filter(response %in% 1:10) %>%  
+  group_by(country_name, B_COUNTRY_ALPHA, question, response) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(country_name, B_COUNTRY_ALPHA, question) %>%
+  mutate(probability = count / sum(count))
+
+```
+
+**JS Divergence**
+
+We perform the computation using parallel processing with `detectCores` function in the `parallel` package, and `registerDoParallel` in the `doParallel` package for computational efficiency.
+
+```{r, message = FALSE, warning = FALSE}
+
+# Parallel processing
+n_cores <- detectCores() - 1  # Leave one core free
+cl <- makeCluster(n_cores)
+registerDoParallel(cl)
+
+# List of countries
+country_list <- unique(ctry_dstr[c("country_name", "B_COUNTRY_ALPHA")])
+
+# Pairs of countries
+country_pairs <- expand.grid(
+  Country1 = country_list$country_name, 
+  Country2 = country_list$country_name,
+  stringsAsFactors = FALSE
+  ) %>%
+  filter(Country1 < Country2) %>% 
+  # country codes
+    left_join(country_list, by = c("Country1" = "country_name")) %>%
+  rename(B_COUNTRY_ALPHA1 = B_COUNTRY_ALPHA) %>%
+  left_join(country_list, by = c("Country2" = "country_name")) %>%
+  rename(B_COUNTRY_ALPHA2 = B_COUNTRY_ALPHA)
+
+# Computation of JS divergence
+country_js_results <- foreach(i = 1:nrow(country_pairs), 
+                            .combine = rbind,
+                            .packages = c('dplyr', 'philentropy')) %dopar% {
+  
+  Country1 <- country_pairs$Country1[i]
+  Country2 <- country_pairs$Country2[i]
+  B_COUNTRY_ALPHA1 <- country_pairs$B_COUNTRY_ALPHA1[i]
+  B_COUNTRY_ALPHA2 <- country_pairs$B_COUNTRY_ALPHA2[i]
+  
+# Probability distributions for Country1
+  prob_P <- ctry_dstr %>%
+    filter(country_name == Country1)
+  
+# Probability distributions for Country2
+  prob_Q <- ctry_dstr %>%
+    filter(country_name == Country2)
+  
+# Average JS divergence across all questions
+  question_list <- unique(prob_P$question)
+  jsd_value <- mean(sapply(question_list, function(q) {
+    p1 <- prob_P %>% 
+      filter(question == q) %>% 
+      arrange(response) %>% 
+      pull(probability)
+    
+    p2 <- prob_Q %>% 
+      filter(question == q) %>% 
+      arrange(response) %>% 
+      pull(probability)
+    
+    if(length(p1) > 0 && length(p2) > 0) {
+      JSD(rbind(p1, p2), unit = "log2")
+    } else {
+      NA
+    }
+  }), na.rm = TRUE)
+  
+  # df results
+  data.frame(
+    Country1 = Country1,
+    Country2 = Country2,
+    B_COUNTRY_ALPHA1 = B_COUNTRY_ALPHA1,
+    B_COUNTRY_ALPHA2 = B_COUNTRY_ALPHA2,
+    JSD = jsd_value
+  )
+}
+
+# Stop the pp cluster
+stopCluster(cl)
+
+# Results to tibble 
+country_js_results <- as_tibble(country_js_results)
+
+head(country_js_results) %>% kable()
+
+```
+
+### 2.2.2 Similarity
+
+Comparing the similarity of countries' responses to these questions provides a preliminary understanding of how countries might be grouped based on values, and how this might align with regional difference.
+
+**Create Matrix**
+
+Using the JS divergence values, we create an empty matrix using `matrix()` and loop each row of `country_js_results` to fill in the matrix. A previous, simpler method using `as.matrix()` led to assymetry in the matrix.
+
+```{r, message = FALSE, warning= FALSE}
+# Convert to (distance) matrix for visualisation
+countries_for_matrix <- sort(unique(c(country_js_results$Country1, country_js_results$Country2)))
+
+
+js_matrix <- matrix(0, 
+                   nrow = length(countries_for_matrix), 
+                   ncol = length(countries_for_matrix),
+                   dimnames = list(countries_for_matrix, countries_for_matrix))
+
+for(i in 1:nrow(country_js_results)) {
+  js_matrix[country_js_results$Country1[i], 
+            country_js_results$Country2[i]] <- country_js_results$JSD[i]
+  js_matrix[country_js_results$Country2[i], country_js_results$Country1[i]] <- 
+    country_js_results$JSD[i]
+}
+
+```
+
+**Most Different Countries**
+
+```{r, message = FALSE, warning = FALSE}
+
+data.frame(
+  row = row(js_matrix)[lower.tri(js_matrix)],
+  col = col(js_matrix)[lower.tri(js_matrix)],
+  value = js_matrix[lower.tri(js_matrix)]
+) %>%
+  filter(row != col) %>%  # Remove self-pairs
+  arrange(desc(value)) %>%
+  distinct(value, .keep_all = TRUE) %>%  # Remove duplicates
+  head(5) %>%  # Get top 5
+  mutate(
+    Country_1 = rownames(js_matrix)[row],
+    Country_2 = colnames(js_matrix)[col],
+    JS_Divergence = round(value, 4)
+  ) %>%
+  select(Country_1, Country_2, JS_Divergence) %>%
+  kable(caption = "Top 5 Most Divergent Country Pairs",
+        align = c('l', 'l', 'c'))
+
+```
+
+South Korea and Libya have the greatest divergence in average distribution across the justifiability of this set of actions. But all of the 5 most divergent pairs include Libya, suggesting it has significantly unique responses compared to other countries.
+
+**Most Similar Countries**
+
+```{r}
+data.frame(
+  row = row(js_matrix)[lower.tri(js_matrix)],
+  col = col(js_matrix)[lower.tri(js_matrix)],
+  value = js_matrix[lower.tri(js_matrix)]
+) %>%
+  filter(row != col) %>%  # Remove self-pairs
+  arrange(value) %>%      # Changed to arrange by ascending order
+  distinct(value, .keep_all = TRUE) %>%  # Remove duplicates
+  head(5) %>%  # Get top 5
+  mutate(
+    Country_1 = rownames(js_matrix)[row],
+    Country_2 = colnames(js_matrix)[col],
+    JS_Divergence = round(value, 4)
+  ) %>%
+  select(Country_1, Country_2, JS_Divergence) %>%
+  kable(caption = "Top 5 Most Similar Country Pairs",  # Updated caption
+        align = c('l', 'l', 'c'))
+```
+
+The most similar countries are Peru and Bolivia, which are close neighbours in the same region. Similarly, Mexico and Guatemala share a border and are considered closely aligned, with similar religious makeup. Religious beliefs and religiosity are significant determinants of attitudes and values. The fact that the majority of Latin America identify as Chrisian, 69% of adults as Catholic [@wormald_religion_2014], likely contributes to the observed similarities between these countries.
+
+### 2.2.3 MDS Plot
+
+Below is a multidimensional scaling plot, which provides a visualisation of the differences between countries within a 2 dimensional space, using the JS divergence measure, such that countries closer together are the more similar. The two dimensions do not have meaning in themselves, but are constructed such that the relative distances between countries are preserved, allowing us to view the space that will be analysed in the following section by the hierarchical clustering function.
+
+```{r}
+#JS matrix to distance object
+js_dist <- as.dist(js_matrix)
+
+# MDS
+mds_result <- cmdscale(js_dist, k=2)
+mds_df <- as.data.frame(mds_result)
+colnames(mds_df) <- c("Dim1", "Dim2")
+mds_df$country <- rownames(js_matrix)
+
+# Plot
+ggplot(mds_df, aes(x=Dim1, y=Dim2, label=country)) +
+  geom_point() +
+  # text options for legibility 
+  geom_text_repel(
+    size = 2.5, 
+    max.overlaps = 100, 
+    force = 10, 
+    force_pull = 0.1, 
+    point.padding = 0.1) +
+  theme_minimal() +
+  labs(title="MDS Plot of Countries based on JS Divergence")
+```
+
+We can observe several interesting patterns from this initial plot; Libya, the Netherlands, South Korea, and to a lesser extent Ethiopia and Myanmar (Burma) are outliers from the central cluster. The Netherlands may be considered an outlier as it is arguably the most progressive of the countries, described as a “culture of tolerance” in which many of the measured actions are permissible, including abortion [@loll_differences_2019], euthanasia [@karumathil_culture_2022], and, a previously discussed action, prostitution [@stack_survivalism_2010]. Conversely, sub-Saharan African countries, such as Ethiopia, are associated with declining rates of “positive attitudinal change” [@roberts_changing_2019].
+
+Western, Global North countries appear to be grouped in the upper left of the space, with Eastern European and Latin American countries closer to the centre, and a set of Middle Eastern, and Asian countries on the right. The central cluster of some Eastern European and Latin American countries may cluster due to heightened religiosity as the former “experienced a religious resurgence” post-Soviet Communism [@inglehart_attitudes_2021] and the majority of Latin America is religious, specifically Catholic [@wormald_religion_2014]. The Global North or Western countries are considered more culturally individualistic [@green_variation_2005] whereas, Middle Eastern and Asian countries share more collectivist traits [@karumathil_culture_2022], and religion in some cases, which may explain the respective similarities of their attitudes.
+
+## 2.3 Clustering Countries
+
+To interrogate the similarity across countries and their possible regional divergence, we perform hierarchical clustering to group the countries. Having tried DBSCAN, we found hierarchical clusters to have more meaningful results and be more interpretable through the visualisation of the splits in a dendrogram diagram. This method also allowed us to alter the single *k* parameter easily, to compare the effect of different numbers of clusters.
+
+### 2.3.1 Perform Hierarchical Clustering
+
+We first use *k* = 7 clusters, following some consensus in the literature on a world split into 7 cultural regions. In an analysis of WVS data these “world regions” were specified as “the West (including Western Europe and European settler colonies in North America and the Pacific), Latin America and the Caribbean, the former Soviet and Eastern Bloc, the Muslim World, sub-Saharan Africa, South and Southeast Asia, and East Asia” [@roberts_changing_2019].
+
+We avoid using `"complete"` clustering, as it is sensitive to outliers, which we have already observed in our data. `"average"` produces a large number of single country clusters and groups various others together, which is not meaningful, so we use `ward.D2`, which minimises within-cluster variance and creates more balanced and evenly-sized clusters.
+
+```{r}
+
+# hierarchical clustering
+hc <- hclust(as.dist(js_matrix), method = "ward.D2") # (using distance matrix)
+
+# Number of clusters
+k <- 7
+
+# Cut tree 
+clusters <- cutree(hc, k)
+
+# Data frame of cluster assignments, with B_COUNTRY_ALPHA attached 
+cluster_df_7 <- data.frame(
+  Country = names(clusters),
+  Cluster = clusters
+) %>%
+  distinct() %>% 
+   left_join(
+    country_js_results %>%
+      select(Country1, B_COUNTRY_ALPHA1) %>%
+      distinct() %>%
+      rename(Country = Country1, 
+             B_COUNTRY_ALPHA = B_COUNTRY_ALPHA1),
+    by = "Country"
+  ) %>%
+  arrange(Cluster, Country)
+
+# Print 
+cluster_df_7 %>%
+  group_by(Cluster) %>%
+  summarise(Countries = paste(Country, collapse = ", ")) %>%
+  kable(col.names = c("Cluster", "Countries"),
+        caption = "Countries Grouped by Cluster") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+With 7 clusters, there emerge (1) a set of European and Western countries, (2) A range of Latin American, East Asian, and Eastern European countries, along with Northern Ireland and the United States, (3) Middle Eastern, African, and South Asian countries, (4) A range of South American, African, and some East Asian countries, then (5) North African Libya and Egypt, and Ethiopia, and (6) and (7) as apparent outliers.
+
+Whilst these groupings appear to follow some aforementioned expected cultural regional attitudes, they could be more meaningful, and we see groupings of countries with very different histories, religions and values, so we plot a dendrogram to see the structure of the clusters produced.
+
+**Cluster Dendrogram, K = 7**
+
+Visualising the clustering process is helpful to interpret the dissemination of each group of countries. The dendrogram using base R `plot()` shows the levels at which the clusters are split. We add boxes around clusters with `rect.hclust()`. higher values of *k* to further differentiate across the clusters.
+
+```{r, message= FALSE, warning = FALSE}
+plot(hc, hang = -1, cex = 0.6)
+
+rect.hclust(hc, k, border="red")
+```
+
+A significant split at a lower level of the dendrogram splits off South Korea, Vietnam, Mongolia, Taiwan, Hing Kong and Macao from a group of mostly Eastern European countries. This suggests a close regional association that is not captured by the *k* = 7 parameter, so we increase the value of *k* to capture these more nuanced regional differences in responses. The cluster dendrogram allows us to know that these clusters already exist in the responses to the questions, and provides justification for altering our method to account for these.
+
+**K = 10**
+
+```{r, echo=FALSE, message = FALSE, warning= FALSE}
+
+# Using hierarchical clustering
+hc <- hclust(as.dist(js_matrix), method = "ward.D2") #(using distance matrix)
+
+# Adjust k number of clusters
+k <- 10
+
+# Cut tree 
+clusters <- cutree(hc, k)
+
+# Data frame of cluster assignments, with B_COUNTRY_ALPHA
+cluster_df_10 <- data.frame(
+  Country = names(clusters),
+  Cluster = clusters
+) %>%
+  distinct() %>% 
+   left_join(
+    country_js_results %>%
+      select(Country1, B_COUNTRY_ALPHA1) %>%
+      distinct() %>%
+      rename(Country = Country1, 
+             B_COUNTRY_ALPHA = B_COUNTRY_ALPHA1),
+    by = "Country"
+  ) %>%
+  arrange(Cluster, Country)
+
+# Print 
+cluster_df_10 %>%
+  group_by(Cluster) %>%
+  summarise(Countries = paste(Country, collapse = ", ")) %>%
+  kable(col.names = c("Cluster", "Countries"),
+        caption = "Countries Grouped by Cluster") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+### 2.3.2 Regions
+
+Our clustering suggests significant geographic regional clustering of countries on their responses to the justifiabilty of these actions, but manually grouping the questions is not easily interpretable. To compare these clusters to existing geographic regions, we plot them as 10 colours on a world map (using `ne_countries` for a more detailed map), again linking with `iso_a3` codes.
+
+```{r, warning = FALSE, message = FALSE}
+# world map 
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# 
+world_clusters <- world %>%
+  left_join(cluster_df_10, by = c("iso_a3" = "B_COUNTRY_ALPHA"))
+
+# map
+ggplot(data = world_clusters) +
+  geom_sf(aes(fill = factor(Cluster))) +
+  scale_fill_brewer(palette = "Set3", na.value = "grey95", name = "Cluster") +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    plot.background = element_rect(fill = "white"),
+    legend.position = "bottom"
+  ) +
+  labs(title = "Country Clusters Based on Value Justifiability")
+```
+
+Mapping the country clusters reveals distinct patterns in attitudes towards personal autonomy and moral behaviors (homosexuality, abortion, divorce, premarital sex, suicide, euthanasia, and casual sex) across countries. While geographic proximity appears to be a strong determinant of these moral attitudes, with clear regional patterns emerging, the clusters do not align perfectly with continental groupings. The analysis identifies ten distinct clusters: Western liberal democracies form a cohesive group (Cluster 1), while a mixed cluster of developed and middle-income nations (Cluster 2) bridges traditional Western and non-Western attitudes. A large Islamic-influenced cluster (Cluster 3) spans from North Africa through the Middle East to South Asia, while East Asian nations form their own distinctive group (Cluster 7). Latin American, Southeast Asian, and African nations largely group together (Cluster 5), suggesting similar moral frameworks despite geographic distance, and insinuating there to be a shared underlying explanation. Several single-country clusters (Bangladesh, Myanmar, and Tajikistan) indicate unique moral attitude profiles that don't align with their neighbors. Three North/East African nations form a distinct group (Cluster 6), while the remaining countries distribute across the clusters in ways that suggest the influence of historical, religious, and developmental factors beyond simple geographic proximity.
+
+These results suggest a significant regional variation in attitudes toward the justifiability of the specified actions, however, further analysis could employ a more complete set of national data to more meaningfully understand global regional differences. There is a particular lack of data across Africa and Europe, which could allow for an interesting lower-level regional analysis on Europe, which generally has the highest variation, or “plurality” [@karumathil_culture_2022], in cultural attitudes.
+
+## 2.4 Prediction
+
+### 2.4.1 Overview and Rationale for Prediction
+
+Having illustrated that the justifiability of the specified actions varies between countries and thus regionally, we investigated the underlying mechanisms of this difference by determining the most important predictors of divorce. In order for sample sizes to be large enough to generate meaningful predictions, we did not compare at the national level.
+
+The rationale for divorce as the outcome variable first considers the fact divorce is only illegal in two countries (the Philippines and Vatican City), which would influence justifiability as explicit social norms (e.g., laws) impact beliefs and values. Further, evaluations of divorce are multifaceted, impacted by cultural individualism, societal wealth, family and religious values [@toth_divorce_2009], therefore are predicted by a multitude of individual characteristics. Finally, divorced individuals (who supposedly justify this action) are more supportive to other specified actions, such as abortion [@loll_differences_2019], suggesting predictors may have some degree of generalisability to other actions of interest.
+
+Classification is defined as a “predictive modelling process” which categorises data into specified classes [@belcic_what_2024], in this instance a binary factor variable representing unjustifiable (0) justifiable (1) actions, specifically divorce. This decision was based on the choice of similar research to recode these WVS variables scored 1-10 to a 0 and 1 “dichotomy” in which 0 represented scores of 1 - actions deemed never justifiable - and 1, which comprised all other scores in which actions were, to some degree, justifiable [@martinez_justification_2022] [@mcgee_religion_2015].
+
+To ascertain the most significant predictors we instantiated a classification decision tree which was resampled through k-fold cross-validation to obviate issues of overfitting [@prajwala_comparative_2015]. Decision trees split data into progressively smaller categories through “binary classification judgments” [@belcic_what_2024] from which a variable importance plot can be created to visualise the main predictors of divorce attitudes. Decision trees are considered “powerful and popular tools for classification and prediction”, their strengths lying in their interpretability, robustness to the presence of outliers [@prajwala_comparative_2015], and classification reliability and accuracy [@podgorelec_decision_2002].
+
+### 2.4.2 Investigating Predictors of Divorce - The Process
+
+First a new dataframe was created containing all desired predictors, as well as the chosen outcome variable.
+
+```{r}
+# need to make new dataframe with all desired predictors and outcome as binary factor variable
+
+wvs_dt_df <- wvs_qs %>%
+  select(-country_name, 
+         -B_COUNTRY, 
+         -B_COUNTRY_ALPHA, 
+         -N_REGION_ISO, 
+         -N_REGION_WVS, 
+         -O1_LONGITUDE, 
+         -O2_LATITUDE) %>%
+  # Create binary outcome variable for Divorce 
+  mutate(outcome_185 = factor(ifelse(Q185 == 1, 0, 1)))
+
+```
+
+This dataframe was subsequently split into training and test sets [@podgorelec_decision_2002], in which 75% was allocated to the former, and the outcome variable was stratified so each class will be proportionally represented in each set. Cross-validation folds were then specified (k = 10). K-fold cross-validation is a preferable means of determining the likelihood an “outcome is generated by chance” [@gorriz_is_2024], allows for hyperparameter tuning [@anguita_k_2012], and outperforms standard hypothesis testing [@gorriz_is_2024] and leave-one-out cross-validation [@rao_dangers_2008]. The number of folds (k = 10) was chosen based on the premise that larger k values risk underfitting and vice versa for smaller k values [@agrawal_hyperparameter_2023]. Further, researchers have posited standard k values as 5, 10, and 20 [@anguita_k_2012], from which k = 10 was selected as it arguably mitigates the risk of over- and under-fitting. This is considered a typical k value as it reflects the “trade-off” between bias and variance in error estimation [@gorriz_is_2024] and support for k = 10 when employing decision trees is cited in the literature [@rao_dangers_2008]. Finally, the evaluation metric was defined, in this case we selected the area under the receiver operator characteristic curve, otherwise termed ROC AUC.
+
+The ROC curve illustrates the interplay between the true and false positive rates whereby better classification models have higher true positive rates and curves on the left of the graph, the area below which quantifies the performance of the curve [@vujovic_classification_2021]. This area score measures the likelihood a “randomly selected positive has a higher confidence score” than a negative counterpart [@belcic_what_2024]. Higher ROC AUC scores (closer to 1) indicate “excellent” model performance, scores around 0.5 approximate random estimation, and scores closer to 0 indicate “poor” model performance [@prasanna_understanding_2024] and denotes that the classification model scores negatives with greater probabilities than positives [@belcic_what_2024]. Both the curve and the area are considered “important” classification metrics [@prasanna_understanding_2024], and are beneficial in determining model performance in terms of “ranking predictions” as well as when data is imbalanced [@czakon_f1_2022], which distorts metrics such as accuracy [@prasanna_understanding_2024].
+
+```{r}
+# Create training and test sets
+set.seed(123) 
+wvs_split <- initial_split(wvs_dt_df, prop = 0.75, strata = outcome_185)
+wvs_train <- training(wvs_split) 
+wvs_test <- testing(wvs_split)
+
+# Create cross-validation folds
+wvs_cv <- vfold_cv(wvs_train, v = 10)
+
+# Set evaluation metrics
+eval_metrics <- metric_set(roc_auc)
+```
+
+A decision tree model was created, specifying the tunable hyperparameters - cost complexity, tree depth, minimum node size - the model type, classification, and package used to fit the model, rpart. A recipe was written to define the outcome, divorce, and predictors. The included predictors were settlement size and type, urban-rural dimension, important to life values - family, friends, leisure time, politics, work, religion - sex, age, citizenship, whether respondents have children, education level, social class (subjective), and religious denomination. These predictors represent the aforementioned factors that impact attitude formation, as well as other types of regional definition (e.g., urban) which could enhance our understanding of the differences observed. We decided to omit the other actions (Q177-195), as we were trying to determine characteristics that predict regional differences in divorce justifiability and answers to these questions would not yield that result. A workflow combined the model and recipe.
+
+```{r}
+# Create a cross-validated decision tree model
+wvs_dt_model <-
+  decision_tree(
+    cost_complexity = tune(),
+    tree_depth = tune(),
+    min_n = tune()
+  ) %>%
+  set_mode("classification") %>%
+  set_engine("rpart")
+
+# Create recipe
+wvs_dt_recipe <-
+  wvs_train %>%
+  recipe(outcome_185 ~ .) %>%
+  step_rm(Q177, Q178, Q179, Q180, Q181, Q182, Q183, Q184, Q185, Q186, Q187, Q188, Q189, Q190, Q191, Q192, Q193, Q194, Q195)
+
+# Create a workflow for cross-validated model
+wvs_dt_workflow <-
+  workflow() %>%
+  add_recipe(wvs_dt_recipe) %>%
+  add_model(wvs_dt_model)
+```
+
+We tuned the hyperparameters according to suitable standards for an average-sized dataset, cost complexity (0.001-0.1), tree depth (3-10), and minimum node size (1-20).
+
+```{r}
+# Create a hyperparameter tuning grid
+wvs_dt_grid <- expand_grid(
+  cost_complexity = c(0.001, 0.01, 0.1),
+  tree_depth = c(4, 6, 8),
+  min_n = c(5, 10, 20)
+)
+
+# Grid search using parallel processing 
+doParallel::registerDoParallel()
+
+n_cores <- parallel::detectCores() - 1
+
+cl <- makeCluster(n_cores)
+registerDoParallel(cl)
+
+wvs_dt_fit <-
+  tune_grid(
+    wvs_dt_workflow,
+    resamples = wvs_cv,
+    metrics = eval_metrics,
+    grid = wvs_dt_grid
+  )
+
+stopCluster(cl)
+```
+
+**Hyperparameters**
+
+We then plotted a tuning grid which revealed that according to the best ROC AUC value, the model where cost complexity is 0.001, tree depth is 8, and minimum node size is 5, was the optimal classification model.
+
+```{r}
+# Plot hyperparameters
+wvs_dt_fit %>% 
+  collect_metrics() %>%
+  filter(.metric == "roc_auc") %>%
+  ggplot(aes(x = as.factor(cost_complexity), y = mean, group = tree_depth, color = as.factor(tree_depth))) +  geom_point() +
+  geom_line(linetype = "dashed") +
+  theme_minimal() +
+  labs(x = "Cost Complexity", y = "Mean Cross-Validated ROC_AUC", color = "Tree Depth") +
+  ggtitle("Cross Validated Decision Tree Hyperparameter Tuning")
+
+```
+
+```{r}
+# Select best model based on R^2
+highest_roc_dt <- select_best(wvs_dt_fit, metric = "roc_auc")
+highest_roc_dt %>% kable()
+```
+
+This model was fitted to the training set and evaluated on the test set. Unseen test data is used for model evaluation to protect against overfitting and inaccurate predictions [@belcic_what_2024].
+
+```{r}
+# Fit best model to training set
+wvs_final_fit <- 
+  wvs_dt_workflow %>% 
+  finalize_workflow(highest_roc_dt) %>% 
+  fit(wvs_train)
+```
+
+### 2.4.3 Investigating Predictors of Divorce - The Outcome
+
+The ROC AUC score of over 0.5 indicates that the classification predictions made exceed random estimation (0.5), yet are not perfect indicating a margin of error in model predictions.
+
+```{r}
+# Evaluate best model on test set
+wvs_final_fit %>%
+  augment(new_data = wvs_test) %>%
+  eval_metrics(truth = outcome_185, estimate = '.pred_0', '.pred_1', event_level = "second") %>% kable()
+```
+
+The decision tree was then visualised however, due to the default formatting of the rpart.plot function it was not easily interpretable. Considering this, and that the objective of this analysis was to determine the most important predictors of divorce justifiability, we created a variable importance plot with the vip function.
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# Plot decision tree
+rpart.plot(extract_fit_engine(wvs_final_fit), roundint = FALSE)
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+library(vip)
+# Create a variable importance plot
+wvs_vhi <- vip(wvs_final_fit, 
+               num_features = 10, 
+               method = "model", 
+               scale = FALSE)
+
+wvs_vhi$data %>%
+  mutate(Variable = fct_reorder(Variable, Importance)) %>% 
+ggplot(aes(x = Importance, y = Variable)) +
+  geom_col() +
+  scale_y_discrete(
+    labels = c(
+      "Q6" = "Values Religion",
+      "Q5" = "Values Work",
+      "Q4" = "Values Politics", 
+      "Q3" = "Values Leisure",
+      "Q275R" = "Education Level", 
+      "Q287" = "Social Class (subjective)", 
+      "X003R2" = "Age",
+      "H_URBRURAL" = "Urban / Rural",
+      "G_TOWNSIZE2" = "Settlement Size",
+      "H_SETTLEMENT" = "Settlement Type"
+    )
+  ) +
+  theme_minimal() +
+  labs(title = "Relative Variable Importance (%)")
+
+```
+
+This visualisation yielded that, as we expected, religiosity was by far the most important predictor of divorce justifiability. The following five predictors were similar in terms of importance: valuing work, urban-rural, settlement size, settlement type, and education level. Surprisingly social class and valuing of politics were marginally important predictors, converse to research findings of an association between political conservatism and economic and moral issues [@stack_survivalism_2010] and national wealth predicting “evaluations of divorce” [@toth_divorce_2009].
+
+Findings would likely differ if the model was applied to different outcomes, such as euthanasia justifiability, which is notably affected by age, socioeconomic status, urban-rural differences [@tutic_groksa_students_2025], as well as religious denominations (Karumathil & Tripathi, 2022). Despite this, we could arguably expect religiosity to remain an important predictor for many of the action justifiability values as it has been related to euthanasia [@inglehart_attitudes_2021], homosexuality [@furnham_cross-cultural_2009], abortion [@tutic_groksa_students_2025], and suicide [@lester_cross-cultural_2003]. The sexual behaviours - premarital and casual sex - are seemingly more influenced by sexual regulation [@broude_norms_1975].
+
+## Statement on Use of Generative AI Tools, As Per School and Course-Specific Policies
+
+In response to the guidance on the full authorised use of generative AI in assessment, we have utilised generative AI tools throughout the learning and assessment process as permitted. These tools were used in the following ways while making sure we used these tools responsibly to ensure our learning and development align with course expectations. Under Descriptive Statistics, we used AI to help us develop clean and insightful graphs, linking to the `question_labels` created to better display out outputs, and to investigate the alternate measure of the geometric mean Under Clustering Actions, we used AI to implement the process of investigating Jensen-Shannon divergence, and later in Part 2, used AI to aid us with parallel processing due to the large amount of data involved Furthermore, in this section we used AI to print the outputs of agglomerative hierarchical clustering for our desired `k` value Additionally, we used AI to determine the point of maximum curvature, and alternative points of curvature (seen in the graph which was generated by AI) to help us define an appropriate `eps` value. Under Part 2.1 Country Means, we used AI to convert our graphs displaying the geometric mean per question, per country and national-global mean divergence into an interactive plot Furthermore, geographic maps were largely aided by AI Under Part 2.4 Prediction, we used AI to create the binary classification of justification (where “Never Justifiable” became 0, and anything greater than that became 1) and to fix issues with evaluating the model on the test set using ROC AUC Within our models, we used AI to suggest suitable parameters and aid with hyperparameter tuning (e.g. `tree_depth`, `minPts`, `eps`, `cost_complexity`) To avoid any undue repercussions, we have stated throughout the sections of this assignment where we were aided by ChatGPT, to the best of our ability to ensure transparency and adherence to the guidelines while mitigating any concerns.
