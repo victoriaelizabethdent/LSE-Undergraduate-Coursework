@@ -3,22 +3,18 @@
 <h4 align="center">This repository details the projects I have completed throughout BSc in Politics and Data Science.</h4>
 
 ### First Year (2023-24)
-#### DS105A: Data for Data Science (Final Grade: 70)
-* Coursework 1:
-* Coursework 2:
-* Coursework 3:
-* Group Project:
+#### DS105A: Data for Data Science (Overall Grade: 70)
+* [CIVICA Data Scraping](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/DS105A%3A%20Data%20for%20Data%20Scientists/CIVICA%20Data%20Scraping)
+* [Wikipedia Scraping on UK Parliamentary Constituencies](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/DS105A%3A%20Data%20for%20Data%20Scientists/Wikipedia%20Scraping)
+* [London Housing Analysis](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/DS105A%3A%20Data%20for%20Data%20Scientists/London%20Housing%20Analysis)
 
-
-#### ST101W: Programming for Data Science (Final Grade: 75)
+#### ST101W: Programming for Data Science (Overall Grade: 75)
 * Coursework 1:
 * Coursework 2:
 * Coursework 3:
 
 #### Second Year (2024-25)
-#### DS202A: Data Science for Social Scientists (Final Grade: 69)
-* Coursework 1:
-* Coursework 2:
+#### DS202A: Data Science for Social Scientists (Overall Grade: 69)
 - [Exploring Regional Patterns of Moral Justification](
 
 
