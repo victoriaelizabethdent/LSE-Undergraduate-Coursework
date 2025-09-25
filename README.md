@@ -15,7 +15,9 @@
 
 #### Second Year (2024-25)
 #### DS202A: Data Science for Social Scientists (Overall Grade: 69)
-- [Exploring Regional Patterns of Moral Justification](
+*
+*
+* [Exploring Regional Patterns of Moral Justification](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/2nd%20Year%20(2024-25)/DS202A%3A%20Data%20Science%20for%20Social%20Scientists/Exploring%20Regional%20Patterns%20of%20Moral%20Justification)
 
 
 #### ST207: Databases (Final Grade: 73)
