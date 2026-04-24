@@ -1,9 +1,3 @@
-**📊Grade:** 76 (1st Class)
-
-**💻 Coding Language:** Python, Markdown
-
-**💻Technical Skills:** Data Collection, Data Cleaning, Data Visualisation, Exploratory Data Analysis, HTML Parsing, Web Scraping
-
 <h1 align="center">Wikimedia Data Scraping: UK Parliamentary Consituencies</h1>
 <h4 align="center"> Coursework for DS105A: Data for Data Science (30%)</h4>
 
