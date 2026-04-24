@@ -1,9 +1,3 @@
-**📊Grade:** 70 (1st Class)
-
-**💻 Coding Language:** Python, Markdown
-
-**💻Technical Skills:** Data Collection, Data Cleaning, Web Scraping
-
 <h1 align="center">Civica Data Scraping</h1>
 <h4 align="center"> Coursework for DS105A: Data for Data Science (20%)</h4>
 
