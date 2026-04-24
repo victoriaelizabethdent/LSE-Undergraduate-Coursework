@@ -33,7 +33,7 @@ Additionally, `middlewares.py` renders JavaScript heavy pages. The custom class,
 - On each category’s page, it clicks “Load More” until it disappears, ensuring all products are parsed. 
 
 ### HOW TO RUN THE SCRAPER
-With an activated `environment.yml` (see [this README.md](https://github.com/lse-ds205/problem-set-1-victoriaelizabethdent/blob/main/README.md)), the following commands should be run in the terminal to ensure that products are written incrementally, rather than being stored in memory until the crawl finishes:
+With an activated `environment.yml` (see [this README.md](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/blob/main/3rd%20Year%20(2025-26)/DS205%3A%20Applied%20Data%20Science/How%20Ultra-Processed%20is%20the%20Supermarket%20Shelf%3F/README.md)), the following commands should be run in the terminal to ensure that products are written incrementally, rather than being stored in memory until the crawl finishes:
 
 ```
 cd scraper
