@@ -1,9 +1,3 @@
-**📊Grade:** 80 (1st Class)
-
-**💻 Coding Language:** R    
-
-**💻Technical Skills:** Data Analysis, Logistic Regression and Statistical Interpretation, ANOVA, Multicollinearity, VIF Analysis
-
 <h1 align="center">How Are Gambling Outcomes Associated with Health and Underlying Socio-Economic, Demographic and Lifestyle Factors?</h1>
 <h4 align="center"> Individual Project for ST211: Applied Regression</h4>
 
