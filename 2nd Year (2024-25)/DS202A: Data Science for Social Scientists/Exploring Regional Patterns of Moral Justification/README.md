@@ -1,9 +1,3 @@
-**📊Grade:** 76 (1st Class)
-
-**💻 Coding Language:** R, Markdown
-
-**💻Technical Skills:** Data Wrangling, Descriptive Statistics, Clustering (Hierarchical, DBSCAN), Similarity Metrics (Jensen–Shannon Divergence), Correlation Analysis, Classification Models, Decision Trees, Hypothesis Testing
-
 <h1 align="center">What Actions Can Be Justified? Are There Regional Differences When it Comes to This?</h1>
 <h4 align="center"> Group Coursework for DS202A: Data Science for Social Scientists (40%)</h4>
 
