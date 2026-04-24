@@ -1,0 +1,390 @@
+ISO3,Continent,Election Year,Candidate,Party,ElectionID
+SLB,Oceania,2001.0,Allan Kemakeza,People's Alliance,SLB20010101PA
+SLB,Oceania,2006.0,Snyder Rini,Independent,SLB20060101PA
+SLB,Oceania,2010.0,Steve Abana,Democratic Party,SLB20100101PA
+SLB,Oceania,2014.0,Thomas Ko Chan,United Democratic,SLB20140101PA
+SLB,Oceania,2019.0,Matthew Wale,Democratic Party,SLB20190101PA
+SLB,Oceania,2024.0,Manasseh Sogavare,Democratic Party,SLB20240417PA
+ARG,South America,2003.0,Carlos Menem,PJ,ARG20030427PR
+ARG,South America,2007.0,Cristina Fernandez de Kirchner,PJ,ARG20071028PA
+ARG,South America,2007.0,Cristina Fernandez de Kirchner,PJ,ARG20071028PR
+ARG,South America,2011.0,Cristina Fernandez de Kirchner,PJ,ARG20111023PA
+ARG,South America,2011.0,Cristina Fernandez de Kirchner,PJ,ARG20111023PR
+ARG,South America,2015.0,Mauricio Macri,PRO,ARG20151025PA
+ARG,South America,2015.0,Mauricio Macri,PRO,ARG20151122PR
+ARG,South America,2015.0,Mauricio Macri,PRO,ARG20151025PR
+ARG,South America,2019.0,Alberto Fernandez,PJ,ARG20191027PA
+ARG,South America,2019.0,Alberto Fernandez,PJ,ARG20191027PR
+ARG,South America,2023.0,Javier Millei,PL,ARG20231022PA
+ARG,South America,2023.0,Javier Millei,PL,ARG20231119PR
+ARG,South America,2023.0,Javier Millei,PL,ARG20231022PR
+PLW,Oceania,2000.0,Tommy Remengesau,Independent,PLW20000101PA
+PLW,Oceania,2000.0,Tommy Remengesau,Independent,PLW20000101PR
+PLW,Oceania,2004.0,Tommy Remengesau,Independent,PLW20040101PA
+PLW,Oceania,2004.0,Tommy Remengesau,Independent,PLW20040101PR
+PLW,Oceania,2008.0,Johnson Toribiong,Independent,PLW20080101PA
+PLW,Oceania,2008.0,Johnson Toribiong,Independent,PLW20080101PR
+PLW,Oceania,2012.0,Tommy Remengesau,Independent,PLW20120101PA
+PLW,Oceania,2012.0,Tommy Remengesau,Independent,PLW20120101PR
+PLW,Oceania,2016.0,Tommy Remengesau,Independent,PLW20160101PA
+PLW,Oceania,2016.0,Tommy Remengesau,Independent,PLW20160101PR
+PLW,Oceania,2020.0,Surangel Whipps Jr.,Independent,PLW20200101PA
+PLW,Oceania,2020.0,Surangel Whipps Jr.,Independent,PLW20201103PR
+PLW,Oceania,2020.0,Surangel Whipps Jr.,Independent,PLW20200922PR
+PLW,Oceania,2024.0,Surangel Whipps Jr.,Independent,PLW20241105PA
+PLW,Oceania,2024.0,Surangel Whipps Jr.,Independent,PLW20241105PR
+SLV,North America,2004.0,Antonio Saca,ARENA,SLV20040101PR
+SLV,North America,2009.0,Mauricio Funes,FMLN,SLV20090101PA
+SLV,North America,2009.0,Mauricio Funes,FMLN,SLV20090101PR
+SLV,North America,2014.0,Salvador Sanchez Ceren,FMLN,SLV20140309PR
+SLV,North America,2014.0,Salvador Sanchez Ceren,FMLN,SLV20140202PR
+SLV,North America,2019.0,Nayib Bukele,GANA,SLV20190203PR
+SLV,North America,2024.0,Nayib Bukele,NI,SLV20240204PA
+SLV,North America,2024.0,Nayib Bukele,NI,SLV20240204PR
+USA,North America,2000.0,George W. Bush,Republican,USA20000101PA
+USA,North America,2000.0,George W. Bush,Republican,USA20000101PR
+USA,North America,2004.0,George W. Bush,Republican,USA20040101PA
+USA,North America,2004.0,George W. Bush,Republican,USA20040101PR
+USA,North America,2008.0,Barrack Obama,Democratic,USA20080101PA
+USA,North America,2008.0,Barrack Obama,Democratic,USA20080101PR
+USA,North America,2012.0,Barrack Obama,Democratic,USA20120101PA
+USA,North America,2012.0,Barrack Obama,Democratic,USA20120101PR
+USA,North America,2016.0,Donald Trump,Republican,USA20160101PA
+USA,North America,2016.0,Donald Trump,Republican,USA20160101PR
+USA,North America,2020.0,Joe Biden,Democratic,USA20200101PA
+USA,North America,2020.0,Joe Biden,Democratic,USA20200101PR
+USA,North America,2024.0,Donald Trump,Republican,USA20241105PA
+USA,North America,2024.0,Donald Trump,Republican,USA20241105PR
+PAN,North America,2004.0,Martin Torrijos,PRD,PAN20040101PA
+PAN,North America,2004.0,Martin Torrijos,PRD,PAN20040101PR
+PAN,North America,2009.0,Ricardo Martinelli,CD,PAN20090101PA
+PAN,North America,2009.0,Ricardo Martinelli,CD,PAN20090101PR
+PAN,North America,2014.0,Juan Carlos Varela,Panamenista,PAN20140101PA
+PAN,North America,2014.0,Juan Carlos Varela,Panamenista,PAN20140101PR
+PAN,North America,2019.0,Laurentino Cortizo,PRD,PAN20190101PA
+PAN,North America,2019.0,Laurentino Cortizo,PRD,PAN20190101PR
+PAN,North America,2024.0,Jose Raul Mulino,RM,PAN20240505PR
+ALB,Europe,2001.0,Fatos Nano,PS,ALB20010708PA
+ALB,Europe,2005.0,Sali Berisha,PD,ALB20050703PA
+ALB,Europe,2009.0,Sali Berisha,PD,ALB20090628PA
+ALB,Europe,2013.0,Edi Rama,PS,ALB20130623PA
+ALB,Europe,2017.0,Edi Rama,PS,ALB20170725PA
+ALB,Europe,2021.0,Edi Rama,PS,ALB20210425PA
+BGR,Europe,2001.0,Georgi Parvanov ,BSP,BGR20010101PA
+BGR,Europe,2001.0,Georgi Parvanov ,BSP,BGR20011118PR
+BGR,Europe,2001.0,Georgi Parvanov ,BSP,BGR20011111PR
+BGR,Europe,2006.0,Georgi Parvanov ,BSP,BGR20061029PR
+BGR,Europe,2006.0,Georgi Parvanov ,BSP,BGR20061022PR
+BGR,Europe,2011.0,Rosen Plevneliev,GERB,BGR20111030PR
+BGR,Europe,2011.0,Rosen Plevneliev,GERB,BGR20111023PR
+BGR,Europe,2016.0,Rumen Radev,Independent,BGR20161113PR
+BGR,Europe,2016.0,Rumen Radev,Independent,BGR20161106PR
+BGR,Europe,2021.0,Rumen Radev,Independent,BGR20211114PA
+BGR,Europe,2021.0,Rumen Radev,Independent,BGR20210711PA
+BGR,Europe,2021.0,Rumen Radev,Independent,BGR20210404PA
+BGR,Europe,2021.0,Rumen Radev,Independent,BGR20211121PR
+BGR,Europe,2021.0,Rumen Radev,Independent,BGR20211114PR
+BLR,Europe,2001.0,Alexander Lukashenko,Independent,BLR20010101PR
+BLR,Europe,2006.0,Alexander Lukashenko,Independent,BLR20060101PR
+BLR,Europe,2010.0,Alexander Lukashenko,Independent,BLR20100101PR
+BLR,Europe,2015.0,Alexander Lukashenko,Independent,BLR20150101PR
+BLR,Europe,2020.0,Alexander Lukashenko,Independent,BLR20200809PR
+RUS,Europe,2000.0,Vladmir Putin,Independent,RUS20000101PR
+RUS,Europe,2004.0,Vladimir Putin,Independent,RUS20040101PR
+RUS,Europe,2008.0,Dmitry Medvedev,United Russia,RUS20080101PR
+RUS,Europe,2012.0,Vladimir Putin,Independent,RUS20120101PR
+RUS,Europe,2018.0,Vladimir Putin,Independent,RUS20180101PR
+RUS,Europe,2024.0,Vladimir Putin,Independent,RUS20240315PR
+CHE,Europe,2003.0,Ueli Maurer,Swiss People’s,CHE20030101PA
+CHE,Europe,2007.0,Ueli Maurer,Swiss People’s,CHE20070101PA
+CHE,Europe,2011.0,Toni Brunner,Swiss People’s,CHE20110101PA
+CHE,Europe,2015.0,Toni Brunner,Swiss People’s,CHE20150101PA
+CHE,Europe,2019.0,Albert Rosti,Swiss People’s,CHE20190101PA
+CHE,Europe,2023.0,Marco Chiesa,Swiss People’s,CHE20231022PA
+EST,Europe,2011.0,Toomas Hendrik Ilves,Social Democratic,EST20110101PA
+DNK,Europe,2001.0,Anders Fogh Rasmussen,Venstre,DNK20010101PA
+DNK,Europe,2005.0,Anders Fogh Rasmussen,Venstre,DNK20050101PA
+DNK,Europe,2007.0,Anders Fogh Rasmussen,Venstre,DNK20070101PA
+DNK,Europe,2011.0,Lars Lokke Rasmussen,Venstre,DNK20110101PA
+DNK,Europe,2015.0,Helle Thorning-Schmidt,Social Democrats,DNK20150101PA
+DNK,Europe,2019.0,Mette Frederiksen,Social Democrats,DNK20190101PA
+DNK,Europe,2022.0,Mette Frederiksen,Social Democrats,DNK20220101PA
+HUN,Europe,2010.0,Pal Schmitt,Fidesz,HUN20100101PA
+HUN,Europe,2022.0,Katilin Novak,Fidesz,HUN20220101PA
+IRL,Europe,2011.0,Michael D. Higgins,Labour Party,IRL20110101PA
+IRL,Europe,2011.0,Michael D. Higgins,Labour Party,IRL20110101PR
+IRL,Europe,2018.0,Michael D. Higgins,Independent,IRL20180101PR
+LUX,Europe,2004.0,Jean-Claude Juncker,CSV,LUX20040101PA
+LUX,Europe,2009.0,Jean-Claude Juncker,CSV,LUX20090101PA
+LUX,Europe,2013.0,Jean-Claude Juncker,CSV,LUX20130101PA
+LUX,Europe,2018.0,Jean-Claude Juncker,CSV,LUX20180101PA
+LUX,Europe,2023.0,Luc Frieden,CSV,LUX20231008PA
+AZE,Asia,2003.0,Ilham Aliyev,New Azerbaijan,AZE20030101PR
+AZE,Asia,2008.0,Ilham Aliyev,New Azerbaijan,AZE20081015PR
+AZE,Asia,2013.0,Ilham Aliyev,New Azerbaijan,AZE20130101PR
+AZE,Asia,2018.0,Ilham Aliyev,New Azerbaijan,AZE20180101PR
+AZE,Asia,2024.0,Ilham Aliyev,New Azerbaijan,AZE20240901PA
+AZE,Asia,2024.0,Ilham Aliyev,New Azerbaijan,AZE20240207PR
+KGZ,Asia,2000.0,Askar Akayev,Independent,KGZ20000101PA
+KGZ,Asia,2000.0,Askar Akayev,Independent,KGZ20000101PR
+KGZ,Asia,2005.0,Kurmanbek Bakiyev,Independent,KGZ20050101PA
+KGZ,Asia,2005.0,Kurmanbek Bakiyev,Independent,KGZ20050101PR
+KGZ,Asia,2009.0,Kurmanbek Bakiyev,Ak Jol,KGZ20090101PR
+KGZ,Asia,2011.0,Almazbek Atambayev,SDPK,KGZ20110101PR
+KGZ,Asia,2017.0,Sooronbay Jeenbekov,SDPK,KGZ20170101PR
+KGZ,Asia,2021.0,Sadyr Japarov,Mekenchil,KGZ20210101PA
+KGZ,Asia,2021.0,Sadyr Japarov,Mekenchil,KGZ20210101PR
+TKM,Asia,2007.0,Gurbanguly Berdimuhamedow,TDP,TKM20070101PR
+TKM,Asia,2012.0,Gurbanguly Berdimuhamedow,TDP,TKM20120101PR
+TKM,Asia,2017.0,Gurbanguly Berdimuhamedow,TDP,TKM20170101PR
+TKM,Asia,2022.0,Serdar Berdimuhamedow,TDP,TKM20220101PR
+IRQ,Asia,2005.0,Jalal Talabani,Patriotic Union of Kurdistan,IRQ20050101PA
+IRQ,Asia,2010.0,Jalal Talabani,Patriotic Union of Kurdistan,IRQ20100101PA
+IRQ,Asia,2014.0,Fuad Masum,Patriotic Union of Kurdistan,IRQ20140101PA
+IRQ,Asia,2018.0,Barham Slih,Patriotic Union of Kurdistan,IRQ20180101PA
+IDN,Asia,2004.0,Susilo Bambang Yudhoyono,Democrat,IDN20040101PA
+IDN,Asia,2004.0,Susilo Bambang Yudhoyono,Democrat,IDN20040920PR
+IDN,Asia,2004.0,Susilo Bambang Yudhoyono,Democrat,IDN20040405PR
+IDN,Asia,2009.0,Susilo Bambang Yudhoyono,Democrat,IDN20090101PA
+IDN,Asia,2009.0,Susilo Bambang Yudhoyono,Democrat,IDN20090708PR
+IDN,Asia,2014.0,Joko Widodo,PDI-P,IDN20140409PA
+IDN,Asia,2014.0,Joko Widodo,PDI-P,IDN20140709PR
+IDN,Asia,2019.0,Joko Widodo,PDI-P,IDN20190417PA
+IDN,Asia,2019.0,Joko Widodo,PDI-P,IDN20190417PR
+IDN,Asia,2024.0,Prabowo Subianto,Gerindra,IDN20240214PA
+IDN,Asia,2024.0,Prabowo Subianto,Gerindra,IDN20240214PR
+SVK,Europe,2004.0,Ivan Gasparovic,HZD,SVK20040417PR
+SVK,Europe,2004.0,Ivan Gasparovic,HZD,SVK20040403PR
+SVK,Europe,2009.0,Ivan Gasparovic,Independent,SVK20090404PR
+SVK,Europe,2009.0,Ivan Gasparovic,Independent,SVK20090321PR
+SVK,Europe,2014.0,Andrej Kiska,Independent,SVK20140329PR
+SVK,Europe,2014.0,Andrej Kiska,Independent,SVK20140315PR
+SVK,Europe,2019.0,Zuzana Caputova,PS,SVK20190330PR
+SVK,Europe,2019.0,Zuzana Caputova,PS,SVK20190316PR
+SVK,Europe,2024.0,Peter Pellegrini,Hlas,SVK20240323PR
+CRI,North America,2002.0,Abel Pacheco,PUSC,CRI20020101PA
+CRI,North America,2002.0,Abel Pacheco,PUSC,CRI20020407PR
+CRI,North America,2002.0,Abel Pacheco,PUSC,CRI20020203PR
+CRI,North America,2006.0,Oscar Arias,PLN,CRI20060101PA
+CRI,North America,2006.0,Oscar Arias,PLN,CRI20060101PR
+CRI,North America,2010.0,Laura Chinchilla,PLN,CRI20100101PA
+CRI,North America,2010.0,Laura Chinchilla,PLN,CRI20100101PR
+CRI,North America,2014.0,Luis Guillermo Solis,PAC,CRI20140101PA
+CRI,North America,2014.0,Luis Guillermo Solis,PAC,CRI20140406PR
+CRI,North America,2014.0,Luis Guillermo Solis,PAC,CRI20140202PR
+CRI,North America,2018.0,Carlos Alvarado,PAC,CRI20180101PA
+CRI,North America,2018.0,Carlos Alvarado,PAC,CRI20180401PR
+CRI,North America,2018.0,Carlos Alvarado,PAC,CRI20180204PR
+CRI,North America,2022.0,Rodrigo Chaves,PPSD,CRI20220101PA
+CRI,North America,2022.0,Rodrigo Chaves,PPSD,CRI20220403PR
+CRI,North America,2022.0,Rodrigo Chaves,PPSD,CRI20220206PR
+CHL,South America,2000.0,Ricardo Lagos,Concertación (PPD),CHL20000101PR
+CHL,South America,2006.0,Michelle Bachelet,Concertación (PS),CHL20060101PR
+CHL,South America,2010.0,Sebastián Piñera,Coalition for Change (RN),CHL20100101PR
+CHL,South America,2013.0,Michelle Bachelet,Nueva Mayoría,CHL20130101PA
+CHL,South America,2013.0,Michelle Bachelet,Nueva Mayoría,CHL20131215PR
+CHL,South America,2013.0,Michelle Bachelet,Nueva Mayoría,CHL20131117PR
+CHL,South America,2017.0,Sebastián Piñera,Independent (Chile Vamos),CHL20170101PA
+CHL,South America,2017.0,Sebastián Piñera,Independent (Chile Vamos),CHL20171217PR
+CHL,South America,2017.0,Sebastián Piñera,Independent (Chile Vamos),CHL20171119PR
+CHL,South America,2021.0,Gabriel Boric,Apruebo Dignidad (CS),CHL20210101PA
+CHL,South America,2021.0,Gabriel Boric,Apruebo Dignidad (CS),CHL20211218PR
+CHL,South America,2021.0,Gabriel Boric,Apruebo Dignidad (CS),CHL20211121PR
+GUY,South America,2001.0,Bharrat Jagdeo,People's Progressive Party/Civic,GUY20010101PA
+GUY,South America,2006.0,Bharrat Jagdeo,People's Progressive Party/Civic,People's Progressive Party/Civic
+GUY,South America,2011.0,Donald Ramotar,People's Progressive Party/Civic,GUY20110101PA
+GUY,South America,2015.0,David A. Granger,APNU+AFC,GUY20150101PA
+GUY,South America,2020.0,Irfaan Ali,People's Progressive Party/Civic,GUY20200101PA
+BGD,Asia,2001.0,Iajuddin Ahmed,Bangladesh Nationalist Party (BNP),BGD20010101PA
+BGD,Asia,2018.0,Abdul Hamid,Awami League (AL),BGD20180101PA
+BEN,Africa,2001.0,Mathieu Kérékou,Front of Action for Renewal and Development (FARD-Alafia),BEN20010318PR
+BEN,Africa,2001.0,Mathieu Kérékou,Front of Action for Renewal and Development (FARD-Alafia),BEN20010304PR
+BEN,Africa,2006.0,Yayi Boni,Independent,BEN20060319PR
+BEN,Africa,2006.0,Yayi Boni,Independent,BEN20060305PR
+BEN,Africa,2011.0,Yayi Boni,Independent,BEN20110101PA
+BEN,Africa,2011.0,Yayi Boni,Independent,BEN20110313PR
+BEN,Africa,2016.0,Patrice Talon,Independent,BEN20160320PR
+BEN,Africa,2016.0,Patrice Talon,Independent,BEN20160306PR
+BEN,Africa,2021.0,Patrice Talon,Independent,BEN20210411PR
+BWA,Africa,2004.0,Festus Mogae,BDP,BWA20040101PA
+BWA,Africa,2009.0,Ian Khama,BDP,BWA20090101PA
+BWA,Africa,2014.0,Ian Khama,BDP,BWA20140101PA
+BWA,Africa,2019.0,Mokgweetsi Masisi,BDP,BWA20190101PA
+BWA,Africa,2024.0,Duma Boko,UDC,BWA20241030PA
+CPV,Africa,2001.0,Pedro Pires,African Party for the Independence of Cape Verde (PAICV),CPV20010101PA
+CPV,Africa,2001.0,Pedro Pires,African Party for the Independence of Cape Verde (PAICV),CPV20010225PR
+CPV,Africa,2001.0,Pedro Pires,African Party for the Independence of Cape Verde (PAICV),CPV20010211PR
+CPV,Africa,2006.0,Pedro Pires,African Party for the Independence of Cape Verde (PAICV),CPV20060101PA
+CPV,Africa,2006.0,Pedro Pires,African Party for the Independence of Cape Verde (PAICV),CPV20060101PR
+CPV,Africa,2011.0,Jorge Carlos Fonseca,Movement for Democracy (MpD),CPV20110101PA
+CPV,Africa,2011.0,Jorge Carlos Fonseca,Movement for Democracy (MpD),CPV20110821PR
+CPV,Africa,2011.0,Jorge Carlos Fonseca,Movement for Democracy (MpD),CPV20110807PR
+CPV,Africa,2016.0,Jorge Carlos Fonseca,Movement for Democracy (MpD),CPV20160101PA
+CPV,Africa,2016.0,Jorge Carlos Fonseca,Movement for Democracy (MpD),CPV20161002PR
+CPV,Africa,2021.0,José Maria Neves,African Party for the Independence of Cape Verde (PAICV),CPV20210101PA
+CPV,Africa,2021.0,José Maria Neves,African Party for the Independence of Cape Verde (PAICV),CPV20210101PR
+COG,Africa,2002.0,Denis Sassou Nguesso,Pan-African Union for Social Democracy (UPADS),COG20020101PA
+COG,Africa,2002.0,Denis Sassou Nguesso,Pan-African Union for Social Democracy (UPADS),COG20020101PR
+COG,Africa,2009.0,Denis Sassou Nguesso,Pan-African Union for Social Democracy (UPADS),COG20090101PR
+COG,Africa,2016.0,Denis Sassou Nguesso,Pan-African Union for Social Democracy (UPADS),COG20160101PR
+COG,Africa,2021.0,Denis Sassou Nguesso,Pan-African Union for Social Democracy (UPADS),COG20210101PR
+CYP,Europe,2003.0,Tassos Papadopoulos,Democratic Party (DIKO),CYP20030101PR
+CYP,Europe,2008.0,Dimitris Christofias,Progressive Party of Working People (AKEL),CYP20080224PR
+CYP,Europe,2008.0,Dimitris Christofias,Progressive Party of Working People (AKEL),CYP20080217PR
+CYP,Europe,2013.0,Nicos Anastasiades,Democratic Rally (DISY),CYP20130224PR
+CYP,Europe,2013.0,Nicos Anastasiades,Democratic Rally (DISY),CYP20130217PR
+CYP,Europe,2018.0,Nicos Anastasiades,Democratic Rally (DISY),CYP20180204PR
+CYP,Europe,2018.0,Nicos Anastasiades,Democratic Rally (DISY),CYP20180128PR
+CYP,Europe,2023.0,Nikos Christodoulides,"Independent (supported by DISY, DIKO, EDEK, DIPA, Solidarity)",CYP20230212PR
+CYP,Europe,2023.0,Nikos Christodoulides,"Independent (supported by DISY, DIKO, EDEK, DIPA, Solidarity)",CYP20230205PR
+EGY,Africa,2005.0,Hosni Mubarak,National Democratic Party (NDP),EGY20050101PA
+EGY,Africa,2005.0,Hosni Mubarak,National Democratic Party (NDP),EGY20050101PR
+EGY,Africa,2012.0,Mohamed Morsi,Freedom and Justice Party (FJP),EGY20120101PA
+EGY,Africa,2012.0,Mohamed Morsi,Freedom and Justice Party (FJP),EGY20120617PR
+EGY,Africa,2012.0,Mohamed Morsi,Freedom and Justice Party (FJP),EGY20120524PR
+EGY,Africa,2014.0,Abdel Fattah el-Sisi,Independent,EGY20140101PR
+EGY,Africa,2018.0,Abdel Fattah el-Sisi,Independent,EGY20180101PR
+EGY,Africa,2023.0,Abdel Fattah el-Sisi,Independent,EGY20231212PR
+GMB,Africa,2001.0,Yahya Jammeh,Alliance for Patriotic Reorientation and Construction (APRC),GMB20010101PR
+GMB,Africa,2006.0,Yahya Jammeh,Alliance for Patriotic Reorientation and Construction (APRC),GMB20060101PR
+GMB,Africa,2011.0,Yahya Jammeh,Alliance for Patriotic Reorientation and Construction (APRC),GMB20110101PR
+GMB,Africa,2016.0,Adama Barrow,Coalition 2016,GMB20160101PR
+GMB,Africa,2021.0,Adama Barrow,United Democratic Party (UDP),GMB20210101PR
+ISR,Asia,2003.0,Ariel Sharon,Likud,ISR20030101PA
+ISR,Asia,2006.0,Ehud Olmert,Kadima,ISR20060101PA
+ISR,Asia,2009.0,Benjamin Netanyahu,Likud,ISR20090101PA
+ISR,Asia,2013.0,Benjamin Netanyahu,Likud,ISR20130101PA
+ISR,Asia,2015.0,Benjamin Netanyahu,Likud,ISR20150101PA
+ISR,Asia,2019.0,Benjamin Netanyahu,Likud,ISR20191117PA
+ISR,Asia,2019.0,Benjamin Netanyahu,Likud,ISR20190409PA
+ISR,Asia,2020.0,Benjamin Netanyahu,Likud,ISR20200101PA
+ISR,Asia,2021.0,Naftali Bennett,Yamina,ISR20210101PA
+ISR,Asia,2022.0,Benjamin Netanyahu,Likud,ISR20220101PA
+LSO,Africa,2002.0,Lesotho Congress for Democracy (LCD),Pakalitha Mosisili,LSO20020101PA
+LSO,Africa,2007.0,Lesotho Congress for Democracy (LCD),Pakalitha Mosisili,LSO20070101PA
+LSO,Africa,2012.0,Democratic Congress (DC),Pakalitha Mosisili,LSO20120101PA
+LSO,Africa,2015.0,Democratic Congress (DC),Pakalitha Mosisili,LSO20150101PA
+LSO,Africa,2017.0,All Basotho Convention (ABC),Thomas Thabane,LSO20170101PA
+LSO,Africa,2022.0,Revolution for Prosperity (RFP),Sam Matekane,LSO20220101PA
+LBR,Africa,2005.0,Ellen Johnson Sirleaf,Unity Party (UP),LBR20051011PA
+LBR,Africa,2005.0,Ellen Johnson Sirleaf,Unity Party (UP),LBR20051108PR
+LBR,Africa,2005.0,Ellen Johnson Sirleaf,Unity Party (UP),LBR20051011PR
+LBR,Africa,2011.0,Ellen Johnson Sirleaf,Unity Party (UP),LBR20111011PA
+LBR,Africa,2011.0,Ellen Johnson Sirleaf,Unity Party (UP),LBR20111108PR
+LBR,Africa,2011.0,Ellen Johnson Sirleaf,Unity Party (UP),LBR20111011PR
+LBR,Africa,2017.0,George Weah,Coalition for Democratic Change (CDC),LBR20171010PA
+LBR,Africa,2017.0,George Weah,Coalition for Democratic Change (CDC),LBR20171226PR
+LBR,Africa,2017.0,George Weah,Coalition for Democratic Change (CDC),LBR20171010PR
+LBR,Africa,2023.0,Joseph Boakai,Unity Party (UP),LBR20231010PA
+LBR,Africa,2023.0,Joseph Boakai,Unity Party (UP),LBR20231114PR
+LBR,Africa,2023.0,Joseph Boakai,Unity Party (UP),LBR20231010PR
+MMR,Asia,2010.0,Thein Sein,Union Solidarity and Development Party (USDP),MMR20100101PA
+MMR,Asia,2015.0,Aung San Suu Kyi,National League for Democracy (NLD),MMR20150101PA
+MMR,Asia,2020.0,Aung San Suu Kyi,National League for Democracy (NLD),MMR20200101PA
+OMN,Asia,2007.0,Various,Independent,OMN20070101PA
+OMN,Asia,2011.0,Various,Independent,OMN20110101PA
+OMN,Asia,2015.0,Various,Independent,OMN20150101PA
+OMN,Asia,2019.0,Various,Independent,OMN20190101PA
+OMN,Asia,2023.0,Various,Independent,OMN20231029PA
+PAK,Asia,2002.0,Zafarullah Khan Jamali,Pakistan Muslim League (Q) (PML-Q),PAK20020101PA
+PAK,Asia,2008.0,Yousaf Raza Gillani,Pakistan People's Party (PPP),PAK20080101PA
+PAK,Asia,2013.0,Nawaz Sharif,Pakistan Muslim League (Nawaz) (PML-N),PAK20130101PA
+PAK,Asia,2018.0,Imran Khan,Pakistan Tehreek-e-Insaf (PTI),PAK20180101PA
+PAK,Asia,2024.0,Nawaz Sharif,Pakistan Muslim League (Nawaz) (PML-N),PAK20240208PA
+RWA,Africa,2003.0,Paul Kagame,RPF,RWA20030101PA
+RWA,Africa,2003.0,Paul Kagame,RPF,RWA20030101PR
+RWA,Africa,2010.0,Paul Kagame,RPF,RWA20100101PR
+RWA,Africa,2017.0,Paul Kagame,RPF,RWA20170101PR
+RWA,Africa,2024.0,Paul Kagame,RPF,RWA20240715PA
+RWA,Africa,2024.0,Paul Kagame,RPF,RWA20240715PR
+SEN,Africa,2000.0,Abdoulaye Wade,Senegalese Democratic Party (PDS),SEN20000319PR
+SEN,Africa,2000.0,Abdoulaye Wade,Senegalese Democratic Party (PDS),SEN20000227PR
+SEN,Africa,2007.0,Abdoulaye Wade,Senegalese Democratic Party (PDS),SEN20070101PA
+SEN,Africa,2007.0,Abdoulaye Wade,Senegalese Democratic Party (PDS),SEN20070101PR
+SEN,Africa,2012.0,Macky Sall,Alliance for the Republic (APR),SEN20120101PA
+SEN,Africa,2012.0,Macky Sall,Alliance for the Republic (APR),SEN20120325PR
+SEN,Africa,2012.0,Macky Sall,Alliance for the Republic (APR),SEN20120226PR
+SEN,Africa,2019.0,Macky Sall,Alliance for the Republic (APR),SEN20190101PR
+SEN,Africa,2024.0,Bassirou Diomaye Faye,"Patriots of Senegal for Work, Ethics and Fraternity (PASTEF)",SEN20241117PA
+SEN,Africa,2024.0,Bassirou Diomaye Faye,"Patriots of Senegal for Work, Ethics and Fraternity (PASTEF)",SEN20240324PR
+SYC,Africa,2001.0,France-Albert René,Seychelles People's Progressive Front (SPPF),SYC20010101PR
+SYC,Africa,2006.0,James Michel,Seychelles People's Progressive Front (SPPF),SYC20060101PR
+SYC,Africa,2011.0,James Michel,Seychelles People's Progressive Front (SPPF),SYC20110101PA
+SYC,Africa,2011.0,James Michel,Seychelles People's Progressive Front (SPPF),SYC20110101PR
+SYC,Africa,2015.0,James Michel,Parti Lepep (formerly SPPF),SYC20151218PR
+SYC,Africa,2015.0,James Michel,Parti Lepep (formerly SPPF),SYC20151205PR
+SYC,Africa,2020.0,Wavel Ramkalawan,Linyon Demokratik Seselwa (LDS),SYC20200101PA
+SYC,Africa,2020.0,Wavel Ramkalawan,Linyon Demokratik Seselwa (LDS),SYC20200101PR
+SGP,Asia,2001.0,Goh Chok Tong,People's Action Party (PAP),SGP20010101PA
+SGP,Asia,2006.0,Lee Hsien Loong,People's Action Party (PAP),SGP20060101PA
+SGP,Asia,2011.0,Lee Hsien Loong,People's Action Party (PAP),SGP20110101PA
+SGP,Asia,2011.0,Lee Hsien Loong,People's Action Party (PAP),SGP20110101PR
+SGP,Asia,2015.0,Lee Hsien Loong,People's Action Party (PAP),SGP20150101PA
+SGP,Asia,2020.0,Lee Hsien Loong,People's Action Party (PAP),SGP20200101PA
+SDN,Africa,2000.0,Omar al-Bashir,National Congress Party (NCP),SDN20000101PA
+SDN,Africa,2000.0,Omar al-Bashir,National Congress Party (NCP),SDN20000101PR
+SDN,Africa,2010.0,Omar al-Bashir,National Congress Party (NCP),SDN20100101PA
+SDN,Africa,2010.0,Omar al-Bashir,National Congress Party (NCP),SDN20100101PR
+SDN,Africa,2015.0,Omar al-Bashir,National Congress Party (NCP),SDN20150101PA
+SDN,Africa,2015.0,Omar al-Bashir,National Congress Party (NCP),SDN20150101PR
+ZWE,Africa,2002.0,Robert Mugabe,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20020101PR
+ZWE,Africa,2008.0,Robert Mugabe,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20080101PA
+ZWE,Africa,2008.0,Robert Mugabe,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20080627PR
+ZWE,Africa,2008.0,Robert Mugabe,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20080329PR
+ZWE,Africa,2013.0,Robert Mugabe,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20130101PA
+ZWE,Africa,2013.0,Robert Mugabe,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20130101PR
+ZWE,Africa,2018.0,Emmerson Mnangagwa,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20180101PA
+ZWE,Africa,2018.0,Emmerson Mnangagwa,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20180101PR
+ZWE,Africa,2023.0,Emmerson Mnangagwa,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20230823PA
+ZWE,Africa,2023.0,Emmerson Mnangagwa,Zimbabwe African National Union–Patriotic Front (ZANU–PF),ZWE20230823PR
+NZL,Oceania,2002.0,Helen Clark,Labour,NZL20020101PA
+NZL,Oceania,2005.0,Helen Clark,Labour,NZL20050101PA
+NZL,Oceania,2008.0,John Key,National,NZL20080101PA
+NZL,Oceania,2011.0,John Key,National,NZL20110101PA
+NZL,Oceania,2014.0,John Key,National,NZL20140101PA
+NZL,Oceania,2017.0,Bill English,National,NZL20170101PA
+NZL,Oceania,2020.0,Jacinda Ardern,Labour,NZL20200101PA
+NZL,Oceania,2023.0,Christopher Luxon,National,NZL20231014PA
+GRC,Europe,2000.0,Costas Simitis,PASOK,GRC20000101PA
+GRC,Europe,2007.0,Kostas Karamanlis,New Democracy,GRC20070101PA
+GRC,Europe,2009.0,George Papandreou,PASOK,GRC20090101PA
+GRC,Europe,2012.0,Antonis Samaras,New Democracy,GRC20120101PA
+GRC,Europe,2015.0,Alexis Tsipras,Syriza,GRC20150101PA
+GRC,Europe,2019.0,Kyriakos Mitsotakis,New Democracy,GRC20190101PA
+GRC,Europe,2023.0,Kyriakos Mitsotakis,New Democracy,GRC20230625PA
+GRC,Europe,2023.0,Kyriakos Mitsotakis,New Democracy,GRC20230521PA
+WSM,North America,2001.0,Tuilaʻepa Saʻilele Malielegaoi,Human Rights Protection Party,WSM20010101PA
+WSM,North America,2006.0,Tuilaʻepa Saʻilele Malielegaoi,Human Rights Protection Party,WSM20060101PA
+WSM,North America,2011.0,Tuilaʻepa Saʻilele Malielegaoi,Human Rights Protection Party,WSM20110101PA
+WSM,North America,2016.0,Tuilaʻepa Saʻilele Malielegaoi,Human Rights Protection Party,WSM20160101PA
+WSM,North America,2021.0,Fiamē Naomi Mataʻafa,Faʻatuatua i le Atua Samoa ua Tasi,WSM20210101PA
+BRB,North America,2003.0,Owen Arthur,Barbados Labour Party,BRB20030101PA
+BRB,North America,2008.0,David Thompson,Democratic Labour Party,BRB20080101PA
+BRB,North America,2013.0,Freundel Stuart,Democratic Labour Party,BRB20130101PA
+BRB,North America,2018.0,Mia Mottley,Barbados Labour Party,BRB20180101PA
+BRB,North America,2022.0,Mia Mottley,Barbados Labour Party,BRB20220101PA
+GTM,North America,2003.0,Óscar Berger,Grand National Alliance,GTM20030101PA
+GTM,North America,2003.0,Óscar Berger,Grand National Alliance,GTM20031228PR
+GTM,North America,2003.0,Óscar Berger,Grand National Alliance,GTM20031109PR
+GTM,North America,2007.0,Álvaro Colom,National Unity of Hope,GTM20070101PA
+GTM,North America,2007.0,Álvaro Colom,National Unity of Hope,GTM20071104PR
+GTM,North America,2007.0,Álvaro Colom,National Unity of Hope,GTM20070909PR
+GTM,North America,2011.0,Otto Pérez Molina,Patriotic Party,GTM20110101PA
+GTM,North America,2011.0,Otto Pérez Molina,Patriotic Party,GTM20111106PR
+GTM,North America,2011.0,Otto Pérez Molina,Patriotic Party,GTM20110911PR
+GTM,North America,2015.0,Jimmy Morales,National Convergence Front,GTM20150101PA
+GTM,North America,2015.0,Jimmy Morales,National Convergence Front,GTM20151025PR
+GTM,North America,2015.0,Jimmy Morales,National Convergence Front,GTM20150906PR
+GTM,North America,2019.0,Alejandro Giammattei,National Unity of Hope,GTM20190101PA
+GTM,North America,2019.0,Alejandro Giammattei,National Unity of Hope,GTM20190811PR
+GTM,North America,2019.0,Alejandro Giammattei,National Unity of Hope,GTM20190616PR
+GTM,North America,2023.0,Bernardo Arévalo,Semilla,GTM20230625PA
+GTM,North America,2023.0,Bernardo Arévalo,Semilla,GTM20230820PR
+GTM,North America,2023.0,Bernardo Arévalo,Semilla,GTM20230625PR
+GBR,Europe,2001.0,Tony Blair,Labour Party,GBR20010607PA
+GBR,Europe,2005.0,Tony Blair,Labour Party,GBR20050505PA
+GBR,Europe,2010.0,David Cameron,Conservative Party,GBR20100506PA
+GBR,Europe,2015.0,David Cameron,Conservative Party,GBR20150507PA
+GBR,Europe,2017.0,Theresa May,Conservative Party,GBR20170608PA
+GBR,Europe,2019.0,Boris Johnson,Conservative Party,GBR20191212PA
+GBR,Europe,2024.0,Keir Starmer,Labour Party,GBR20240704PA

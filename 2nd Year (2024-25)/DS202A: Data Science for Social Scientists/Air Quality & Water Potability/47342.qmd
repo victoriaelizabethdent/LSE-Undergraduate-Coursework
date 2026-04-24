@@ -1,0 +1,840 @@
+---
+title: "DS202A - W08 Summative"
+author: "47342"
+output: html
+self-contained: true
+---
+
+## DS202A: Data for Social Scientists, W08 Summative
+
+Initially, before any data loading or analysis, I need to install the necessary packages and libraries.
+
+```{r}
+library(kknn)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(ggsci)
+library(ggplot2)
+library(yardstick)
+library(tidyverse)
+library(tidymodels)
+library(doParallel)
+```
+
+I will also load this custom theme from Class 2
+
+```{r}
+theme_scatter <- function() {
+  
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        legend.position = "bottom")
+  
+}
+
+theme_bar <- function() {
+  
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank())
+  
+}
+```
+
+### Part I: Showing My `dplyr` Muscles (10 marks)
+
+**(a) Loading the data into a data frame called `aq_bench` and exploring the data.**
+
+```{r}
+aq_bench <- read.csv("Data/AQbench_dataset.csv")
+
+num_columns = ncol(aq_bench)
+num_rows = nrow(aq_bench)
+
+num_countries = aq_bench %>%
+                  group_by(country) %>%
+                  n_groups()
+
+cat("the dataset contains", num_columns, "columns.")
+cat("the dataset contains", num_rows, "rows.")
+cat("the dataset contains", num_countries, "countries.")
+```
+
+**(b) Filter the dataset into 'aq_bench_filtered' to remove the lat, lon, and dataset columns (and replace missing data)**
+
+```{r}
+# removing lat, lon, and dataset columns
+aq_bench_filtered <- aq_bench %>%
+  dplyr::select(-lat, -lon, -dataset)
+  
+# replacing missing data
+aq_bench_filtered <- aq_bench_filtered %>%
+  mutate(across(everything(), ~ ifelse(. == -999, NA, .)))
+
+# identifiying columns with missing values, and imputing them with the median
+aq_bench_filtered <- aq_bench_filtered %>%
+  mutate(across(all_of(
+        names(aq_bench_filtered)[sapply(aq_bench_filtered, is.numeric) & 
+        colSums(is.na(aq_bench_filtered)) > 0]), ~ ifelse(is.na(.), 
+        median(., na.rm = TRUE), .))) %>%
+  group_by(country) %>%
+  mutate(across(all_of(
+        names(aq_bench_filtered)[sapply(aq_bench_filtered, is.numeric) & 
+        colSums(is.na(aq_bench_filtered)) > 0]), ~ ifelse(is.na(.), 
+        median(., na.rm = TRUE), .))) %>%
+  ungroup()
+
+# checking if aq_bench_filtered contains any NA values
+anyNA(aq_bench_filtered) # returns FALSE if there are no NA values
+```
+
+`aq_bench` contained missing data values with the placeholder -999.00, as detailed in the variable documentation. I followed the advice provided by Dr. Ghita Berrada to impute these data, as opposed to deleting these observations, as this is poor practice unless there is certainty that the values are MCAR. I imputed with the median value, first over the whole dataset, then grouping by country (this is due to the fact that some countries only have one row of data, and so calculating the median is impossible.
+
+------------------------------------------------------------------------
+
+### **An Aside: On Coping with Outlier Values**
+
+After identifying these missing values, I am inclined to search the dataset for further missing data values and outliers which may hinder my overall analysis. '[Outliers in Statistics: How to Find and Deal with Them in Your Data](https://cxl.com/blog/outliers/)' (Birkett, 2022) highlights that boxplots and scatterplots the most commonly used graphical methods for detecting outliers. The code below details my boxplots:
+
+```{r}
+# with the use of ChatGPT, I generated boxplots for each variable to visualise their outliers
+numeric_columns <- aq_bench_filtered %>% 
+                    dplyr::select(where(is.numeric))
+
+numeric_columns %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Value") %>%
+  ggplot(aes(x = Variable, y = Value)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 16) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+It is clear from the above plot that `max_population_density_25km`, `max_population_density_5km` and `population_density` have the most notable outliers, alongside `o3_aot40` having less than the aforementioned three variables, but more than all other variables.
+
+As mentioned in '[Outliers in Statistics: How to Find and Deal with Them in Your Data]('https://cxl.com/blog/outliers/')' (Birkett, 2022), one way to change the values of outliers is to use winsorized variables – i.e. extreme values replaced by percentiles. This leads to another [website]('https://www.r-bloggers.com/2011/06/winsorization/') which contains two examples of winsorized functions. I modified the second function (as it states in the comments *"...the second form of winsorization usually makes more sense. The data looks to be changed in a more logical way."* ). It did not trim a certain percentage of the data but, as is the most common definition for outliers, replaced data points more than 1.5 times the interquartile range (IQR) above the third quartile (Q3) or below the first quartile (Q1) with upper and lower bounds: Q3 + 1.5 \* IQR for the upper bound, and Q1 - 1.5 \* IQR for the lower.
+
+```{r}
+# winsorization function, with help from ChatGPT 
+winsorize_data <- function(data) {
+  if (all(is.na(data))) return(data)
+  
+  # calculating Q1, Q3 and the IQR
+  Q1 <- quantile(data, 0.25, na.rm = TRUE)
+  Q3 <- quantile(data, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  
+  # calculating lower and upper bounds
+  lower_bound <- Q1 - (1.5 * IQR)
+  upper_bound <- Q3 + (1.5 * IQR)
+  
+  # winsorizing the data
+  winsorized_data <- data
+  winsorized_data[winsorized_data < lower_bound] <- lower_bound
+  winsorized_data[winsorized_data > upper_bound] <- upper_bound
+  
+  return(winsorized_data)
+}
+
+# windorising max_population_density_25km, max_population_density_5km, population_density, and o3_aot40
+aq_bench_filtered <- aq_bench_filtered %>%
+                        mutate(across(c(max_population_density_25km, 
+                                        max_population_density_5km, 
+                                        population_density,
+                                        o3_aot40), 
+                                      ~ winsorize_data(.)))
+
+```
+
+```{r}
+numeric_columns <- aq_bench_filtered %>% 
+                    dplyr::select(where(is.numeric))
+
+numeric_columns %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Value") %>%
+  ggplot(aes(x = Variable, y = Value)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 16) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+It is clear in the boxplots above that these most-striking outliers have been successfully dealt with.
+
+------------------------------------------------------------------------
+
+**(c) What are the 5 countries with the highest number of rows in the dataset? What are the 5 countries with the lowest number?**
+
+```{r}
+# a dataframe storing each country and the amount of rows it has in descending order
+country_rows <- aq_bench_filtered %>% 
+                    count(country,sort=TRUE)
+
+# the most amount of rows (using 'head()')
+highest_rows <- head(country_rows, n=5)
+highest_rows
+
+# the least amount of rows (using 'tail()')
+lowest_rows <- tail(country_rows, n=5)
+lowest_rows
+```
+
+The countries with the highest number of rows in the dataset are...
+
+-   The United States of America, with 1390 🇺🇸
+
+-   Japan, with 1182 🇯🇵
+
+-   Spain, with 440 🇪🇸
+
+-   France, with 404 🇫🇷
+
+-   Italy, with 361 🇮🇹
+
+... meaning these 5 countries make up \~68% of the rows in the dataset.
+
+The countries with the lowest number of rows in the dataset are...
+
+-   India 🇮🇳
+
+-   Lichtenstein **🇱🇮**
+
+-   Malaysia 🇲🇾
+
+-   Nepal 🇳🇵
+
+-   Russia 🇷🇺
+
+... all with one row each, making up less than 0.0009% of the dataset combined.
+
+**HOWEVER:** All the countries listed above have 1 row, but there are 15 countries in AQ_Bench with 1 row. The countries above are selected due to the other countries preceding them in the alphabet. In order to gain a holistic view, all countries with 1 row, in addition to the ones listed above, are *Algeria, American Samoa, Armenia, Barbados, Bermuda, Cape Verde, Egypt, French Guyana, Gibraltar,* and *Greenland*.
+
+(this can be seen by changing `tail(country_rows, n=5)` to `tail(country_rows, n=15)`)
+
+**(d) What is the median NO2 per type of area?**
+
+```{r}
+
+med_no2_per_area <- aq_bench_filtered %>%
+                      dplyr::group_by(type_of_area) %>%
+                      dplyr::summarise(Median_NO2 = median(no2_column, na.rm = TRUE)) %>%
+                      dplyr::rename(
+                        `Type of Area` = type_of_area,
+                        `Median NO2 Level` = Median_NO2
+                      )
+
+med_no2_per_area
+```
+
+**(e) Create a plot that shows the relationship between population density and O3 average values. What does this plot tell you?**
+
+```{r}
+ggplot(aq_bench_filtered, aes(population_density, o3_average_values)) +
+  geom_point(alpha = 0.25) +
+  labs(x = "Population Density", y = "O3 Average Values")
+
+```
+
+Firstly, this plot must be understood alongside my handling of outlier values. This is due to the fact that all outlier values were replaced with the respective upper and lower bounds, `population_density` being one of them. This is why, for the purposes of this diagram, I will use `population_density` variable, found in `aq_bench` . This plot of the original, unaltered relationship is available below.
+
+```{r}
+ggplot(aq_bench_filtered, aes(aq_bench$population_density, o3_average_values)) +
+  geom_point(alpha = 0.25) +
+  labs(x = "Population Density", y = "O3 Average Values")
+```
+
+Why a Scatter Plot?
+
+-   Scatter plots are useful for identifying identify outliers, and understanding the relationship between two continuous variables, in this case `o3_average_values` and `population_density`.
+
+-   Scatter plots allows us to visualise trends and correlations through the distribution of data points, making it easier to spot patterns, e.g. through identifying certain clusters or dispersion in the data.
+
+-   I chose a scatter plot over other types of data visualisation as it provides a clear view of how two variables interact. Unlike boxplots, which summarises the distribution of data but not relationships with other variables, or histograms, which are suited to univariate distributions, scatterplots show how the change in one variable may correspond to changes in the other, making it an appropriate choice
+
+What Does This Plot Tell Us?
+
+-   The initial conclusions we can make from the graph are...
+
+    -   A majority of the data points have a low `population_density` (seen by the cluster on the left)
+
+    -   For low reports of `population_density`, `o3_average_values` can take a wide range of values (and as `population_density` increases, we see the spread narrow.
+
+-   So, we can conclude a few more in-depth statements
+
+    -   High `o3_average_values` are commonly associated with low `population_density`
+
+    -   However, where there are lower reports of `population_density` , majority of the data points tend to be below 30 for `o3_average_values`
+
+### Part 2: Create Regression Models (45 marks)
+
+**In this part, we focus on predicting `o3_average_values`**. This variable refers to O3, better known as Ozone, a gas made up of three oxygen atoms that can be found in the Earth's atmosphere which shields the Earth from the sun's harmful UV radiation. In understanding this, we can also logically consider variables for our regression and models.
+
+**(a) Create a baseline linear regression model**
+
+Using `summary()`, I can gain statistics on each independent variable to then choose some for my model in **(ii)**.
+
+```{r}
+baseline <- lm(o3_average_values ~ ., data = aq_bench_filtered) %>%
+              summary()
+```
+
+> **(i) Create the training and test sets**
+>
+> As different countries have more rows than others, in determining my training and testing set, I wanted the distribution of countries to stay relatively equal. Therefore, I am using `strata = country` to ensure identical proportions of countries in all my code.
+
+```{r}
+ # a seed for reproducibility (maintaing the same sample)
+set.seed(123)
+
+aq_split <- initial_split(aq_bench_filtered, prop = 0.75, strata = country)
+# creating a df_train to contain 75% of my original data
+df_train <- training(aq_split)
+# creating a df_test to contain 25% of my original
+df_test <- testing(aq_split)
+
+paste("We have", nrow(df_train), "training points and", nrow(df_test), "test points.")
+```
+
+> **(ii) Using `df_train` data as a starting point, create a linear regression model that predicts the target variable**
+>
+> The `summary` function provides a set of statistics for each independent variable.
+>
+> **Estimate**: The estimated effect of the independent variable on the dependent variable. This should be in the desired direction (i.e. as the independent increases, the dependent increases), but in deciding on whether it should be an independent variable for my baseline, I must consider statistical significance.
+>
+> **t-value (the Test Statistic)**: How many standard errors the estimate is away from zero. Commonly, a t-value greater than 2 or less than -2 indicates that the variable has a statistically significant effect.
+>
+> **p-value**: The probability that the observed relationship between the independent variable and the dependent variable occurred by chance. A p-value lower than 0.05 (or 0.01 for a stronger significance level) indicates that the variable is statistically significant and should be included in the model.
+>
+> `relative_alt`, `o3_daytime_avg`, `o3_nighttime_avg`, and `o3_median` are the values I have chosen for my baseline model as they each have a low **p-value**, an absolute **t-value** \> 2, and meaningful **Estimates** (`o3_daytime_avg` having a negative effect on the dependent variable, `o3_nighttime_avg` and `o3_median` both showing a positive effect, and `relative_alt` indicating a small positive effect per unit increase).
+
+```{r}
+mv_model <- 
+  lm(o3_average_values ~ relative_alt + o3_median + o3_daytime_avg + o3_nighttime_avg, 
+     data = df_train)
+```
+
+> **(iii) How well does my model perform?**
+
+```{r}
+reg_metrics <- metric_set(rsq, rmse) # a set of evaluation metrics for regression models
+
+mv_model %>% 
+  augment(new_data = df_test) %>% 
+  reg_metrics(truth = o3_average_values, estimate = .fitted)
+
+```
+
+> I will evaluate the performance of my model using two evaluation metrics: RMSE and R-Squared.
+>
+> -   **R-Squared**: The proportion of variance in the dependent variable that is explained by the independent variables in the model
+>
+>     -   The values of R-Squared range from 0 (the model does not explain any variability) to 1 (the model perfectly explains variability)
+>     -   R-Squared can even be negative (the model performs worse than using the mean prediction)
+>     -   A higher R-Squared often means a better fit, but it does not always mean a good model as it could be overfitting
+>
+> **R-Squared = 0.7407121 –** on average `o3_average_values` is explained by the model
+>
+> -   **Root Mean Squared Error (RMSE)**: The average magnitude of error between predicted and actual values in the same units as the response variable (e.g. on house prices, error is in currency).
+>
+>     -   A RMSE of 0 indicates perfect prediction, as it increases it indicates poorer model performance
+>
+>     -   RMSE is also a good evaluation metric as, unlike R-Squared, the magnitude of error is in the same units as the dependent variable (foe example, in predicting house price, the error is in currency, and in this case, the value is in PPB or Parts-per-Billion)
+>
+> **RMSE = 3.2772899 –** deviations of 3.3 may seem high, but as the values of `o3_average_values` range between 3.6 and 65.6, this is not a cause for concern, although should lead to alternate models.
+
+```{r}
+mv_model %>% 
+  augment(new_data = df_test) %>% 
+  ggplot(aes(.fitted, .resid)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point() +
+  theme_scatter() +
+  labs(x = "Fitted values", y = "Residuals", title = "Residuals vs. Fitted Values")
+
+```
+
+> **Can I explain the performance change between the training and test set?**
+>
+> Interpreting the "Residuals/Fitted Values" Graph:
+>
+> -   The graph indicates patterns of heteroscedasticity, violating a key assumption of linear regression.
+>
+> -   The spread of residuals is not constant across fitted values, particularly for larger predicted values, suggesting the model struggles to account for variance changes, potentially affecting performance.
+>
+> -   There are no striking outliers, specifically ones out of line with the general fan-like shape, which indicates the regression model is not being disproportionately influenced by specific data points.
+>
+> The complex and erratic scatter of residuals suggests this model is not well-suited to the data. The poor performance may stem from issues such as the inclusion of variables like `id` and `country` that might introduce noise or irrelevant patterns, or the inappropriate assumption of a linear relationship between predictors and the response variable.
+>
+> These issues could explain the discrepancies between training and test set performance. The next section attempts to address these shortcomings by refining the model and data.
+
+**(b) Come up with a feature selection/feature engineering/model selection strategy to try and get a better model performance.**
+
+In the following section, I use LASSO regression for penalized linear regression to try and find a model that can perform better. This type of linear regression uses a "hyperparameter" or “dial” built into a given model that can be experimented with to improve model performance. In this case, the hyperparameter is a regularisation penalty which takes the value of a non-negative number. This penalty can shrink the magnitude of coefficients down to zero; the larger the penalty, the more shrinkage.
+
+```{r}
+# removing identifying variables from training and testing sets
+df_train <- df_train %>%
+  dplyr::select(- id, - country, - htap_region, - climatic_zone)
+
+df_test <- df_test %>%
+  dplyr::select(- id, - country, - htap_region, - climatic_zone)
+
+# builds a lasso model with the penalty parameter set to 0.01
+lasso_model <-
+  linear_reg(penalty = 0.01, mixture = 1) %>%
+  set_engine("glmnet") %>% 
+  fit(o3_average_values ~ ., data = df_train)
+
+# tidy function to get the coefficients.
+tidy(lasso_model) 
+
+# bar plot
+tidy(lasso_model) %>% 
+  filter(term != "(Intercept)") %>% 
+  slice_head(n = 12) %>%
+  ggplot(aes(abs(estimate), fct_reorder(term, abs(estimate)), fill = estimate > 0)) +
+  geom_col() +
+  theme_bar() +
+  ggsci::scale_fill_jama() +
+  labs(x = "Lasso coefficient", y = "Feature",
+       fill = "Positive?")
+```
+
+I also generated the same "Residuals/Fitted Values" graph as before, this time with better results.
+
+```{r}
+reg_metrics <- metric_set(rsq, rmse)
+
+# Evaluate model
+lasso_model %>% 
+  augment(new_data = df_test) %>%
+  reg_metrics(truth = o3_average_values, estimate = .pred)
+
+# Plot residuals
+lasso_model %>% 
+  augment(new_data = df_test) %>%
+  mutate(.resid = o3_average_values - .pred) %>% 
+  ggplot(aes(.pred, .resid)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_point() +
+  theme_scatter() +
+  labs(x = "Fitted Values", y = "Residuals", title = "Residuals vs. Fitted Values")
+
+```
+
+In comparison to my model, it is easy to tell that this model is an improvement.
+
+**R-Squared = 0.8780151** - this is a substantial increase compared to the initial model, and informs us that the model has improved as it can better explain variability
+
+**RMSE = 2.2074524** - this decrease of the RMSE shows the model has a lower magnitude of error between predicted and actual values.
+
+Interpreting the "Residuals/Fitted Values" Graph (with reference to the original graph):
+
+-   Like the original model, this graph shows some signs of heteroscedasticity. However, the residuals are more evenly scattered around the horizontal line (y = 0) compared to the striking deviation from the horizontal line, as seen in the previous graph.
+
+-   The residuals appear more randomly distributed, with less discernible structure or pattern than in the original model. This suggests the improved model provides a better fit to the data
+
+Therefore, I find it reasonable to conclude this is a better-fitting model as the residuals are more randomly distributed with less of a discernible pattern than is found in the previous model.
+
+Furthermore, in reference to the question "**Can I explain the performance change between the training and test set?**", after the generating this alternate model I find we can attribute the performance change between training and testing sets to likely stem from a combination of an inadequate representation of test set variability in the training set, or possible nonlinear interactions that a linear approach cannot address. To gain a complete understanding of the change in performance, further steps could include exploring non-linear models or feature engineering.
+
+Lastly, to further evaluate the model, I can evaluate the LASSO penalty, seeing if another penalty can further improve the model
+
+```{r}
+lasso <- partial(linear_reg, engine = "glmnet", mixture = 1)
+
+preds <-
+  crossing(penalty = c(0.0001, 0.001, 0.01, 0.1),
+           nest(df_train, .key = "train"),
+           nest(df_test, .key = "test")
+           ) %>% 
+  mutate(model = map(penalty, ~ lasso(penalty = .x)),
+         fit = map2(model, train, ~ fit(.x, o3_average_values ~ ., data = .y)),
+         augmented = map2(fit, test, ~ augment(.x, new_data = .y)),
+         rmses = map(augmented, ~ rmse(.x, truth = o3_average_values, estimate = .pred)))
+
+preds %>% 
+  unnest(rmses) %>% 
+  ggplot(aes(x = as.factor(penalty), y = .estimate, group = 1)) +
+  geom_point() +
+  geom_line(linetype = "dashed") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank())
+```
+
+We can tell that a penalty of 0.01 works better than any other, and so this is a better model than my original model, and the best model using penalised linear regression to perform feature selection.
+
+### Part 3: Create Classification Models (45 marks)
+
+**In this part, we'll focus on predicting `Potability`.**
+
+```{r}
+water_potability <- read.csv('Data/water_potability.csv')
+
+water_potability <- water_potability %>%
+  mutate(Potability = as.factor(Potability)) %>%
+  # removing rows containing NA values (discussion about this decision below)
+  drop_na()
+
+# checking for NA values
+anyNA(water_potability)
+```
+
+I initially used imputation to handle the NAs in the dataframe, as it seemed like a simple and quick solution, especially since I had applied it in Part II. However, upon further reflection, I realized that this might not be the best approach for gaining a deeper understanding of the data. I had also considered removing rows with NA values, which would reduce the dataframe from 3276 rows to 2011, a 35% decrease. After careful thought, I decided to remove the rows with missing values. Although I had an idea for how I could impute the data — by analyzing rows with missing values and comparing them to other rows with similar data in other columns (for example, using other rows with similar values to estimate a missing `ph`) — but this is beyond my coding ability, and through trial and error, was also challenging to gain assistance from AI tools.
+
+[Data Removal]{.underline}
+
+Pros:
+
+1.  Easy to implement without the need for complex algorithms.
+
+2.  Avoids introducing potential bias from guessing missing values.
+
+3.  The remaining data is complete, making analysis straightforward.
+
+4.  No assumptions need to be made about the missing data.
+
+Cons:
+
+1.  Reduces dataset size (35% in your case), which can impact statistical power and model performance.
+
+2.  If missing data is not random, removal can lead to biased results.
+
+3.  The reduced dataset may no longer be fully representative of the original population.
+
+4.  Loss of valuable data may reduce the ability to detect relationships or patterns.
+
+[Imputation]{.underline}
+
+Pros:
+
+1.  All rows remain, maintaining the full dataset size and statistical power.
+
+2.  Imputation ensures the dataset remains as close as possible to the original population.
+
+3.  Avoids the risk of introducing bias by removing potentially important data points.
+
+Cons:
+
+1.  The imputed values may distort the data if the imputation method is inappropriate or if data is not missing at random.
+
+2.  If imputation is done poorly or excessively, it may lead to overfitting of the model.
+
+3.  Imputation assumes the missing data is similar to the existing data, which may not always hold true.
+
+**(a) Create a baseline logistic regression model**
+
+```{r}
+baseline <- 
+  logistic_reg() %>% 
+  set_engine("glm") %>%
+  fit(Potability ~ ., data = water_potability)
+
+summary(baseline$fit)
+```
+
+> **(i) Split your data in training and test set (75% for training set)**
+
+```{r}
+# a seed for reproducibility (maintaing the same sample)
+set.seed(123)
+
+wp_split <- initial_split(water_potability, prop = 0.75, strata = Potability)
+# creating a df_train to contain 75% of my original data
+wp_train <- training(wp_split)
+# creating a df_test to contain 25% of my original
+wp_test <- testing(wp_split)
+
+paste("We have", nrow(wp_train), "training points and", nrow(wp_test), "test points.")
+```
+
+> **(ii) Use whatever metric you feel is most apt to evaluate your model's performance. Explain why you chose this metric.**
+>
+> **ROC AUC (Area Under the Receiver Operating Characteristic Curve):** Measures the model's ability to distinguish between the classes.
+>
+> **Brier Score:** A measure (from 0 to 1, where lower values indicate better performance) of how well the predicted probabilities align with the actual outcomes. It can also be used to evaluate the sharpness of probability forecasts (how confident the predictions are).
+>
+> **Precision**: Measures the proportion of positive predictions that are actually positive, a higher precision indicates fewer false positives.
+>
+> **Recall**: Measures the proportion of actual positive cases that are correctly identified, where a higher recall indicates fewer false negative
+
+```{r}
+model <- 
+  logistic_reg() %>% 
+  set_engine("glm") %>%
+  fit(Potability ~ Solids + Organic_carbon, data = water_potability)
+
+summary(model$fit)
+```
+
+> **iii) Explain what the regression coefficients mean in the context of this problem.**
+>
+> In the context of a logistic regression problem, the regression coefficients refer to the estimated impact of each independent variable on the probability of the dependent variable, Potability. Specifically for logistic regression, "each coefficient indicates the log-odds change in the probability of the outcome for a one-unit increase in the predictor, holding other variables constant" [(UCLA Statistical Methods and Data Analytics)](%22https://stats.oarc.ucla.edu/%22). Each coefficient is defined below, accessed via the `summary()` function.
+>
+> **Estimate**: The estimated effect of the independent variable on the dependent variable. In logistic regression, the estimate represents the log-odds of the outcome variable for a one-unit increase in the predictor variable.
+>
+> **Standard Error**: A measure of the variability of an estimated regression coefficient. It quantifies how much the coefficient estimate might vary from one sample to another if you repeatedly sampled from the population. It is used to calculate the test statistic, detailed below.
+>
+> **z-value**: This is the test statistic for each coefficient, calculated by dividing the estimate by its standard error. A larger absolute z value indicates that the estimate is further from zero, implying the coefficient is likely statistically significant and likely to be meaningful.
+>
+> **p-value**: The probability that the observed relationship between the independent variable and the dependent variable occurred by chance. A p-value lower than 0.05 (or 0.01 for a stronger significance level) indicates that the variable is statistically significant and should be included in the model.
+>
+> `Solids` and `Organic_carbon` are the values I chose for my model as they each have a lower **p-value** in comparison to the other independent variables.An initial evaluation of my model can be done with a single metric, AIC. With these two independent variables in my model, I get an AIC of 2714.3 compared to 2724.8 for my baseline model. Although it is a menial change, of 0.4%, it has still decreased and so is, by this measure, a better model.
+>
+> > I explored a second model where I removed values that are less statistically significant, such as `Sulfate` and `Hardness` as they have the highest p-values.
+>
+> ```{r}
+> # this code chunk must be unindented to be run
+> model <- 
+>   logistic_reg() %>% 
+>   set_engine("glm") %>%
+>   fit(Potability ~ . - Sulfate - Hardness, data = water_potability)
+> >
+> summary(model$fit)
+> ```
+
+> Using AIC, there is a value of 2720.9, which is lower than the baseline, but higher than the first model. Therefore, going forward I will use the first model. **HOWEVER**, there are other metrics which can better evaluate my model.
+
+```{r}
+# ----- USE OF CHATGPT -----
+# generate predictions on the testing set with probability estimates
+predictions <- model %>%
+  predict(wp_test, type = "prob") %>%
+  bind_cols(wp_test)
+
+# converting predicted probabilities to class labels based on a threshold (0.4)
+predictions <- predictions %>%
+  mutate(
+    predicted_class = if_else(.pred_1 > 0.4, 1, 0),
+    Potability = factor(Potability, levels = c(1, 0)),
+    predicted_class = factor(predicted_class, levels = c(1, 0))
+  )
+
+# calculating metrics
+roc_auc_metric <- roc_auc(predictions, truth = Potability, .pred_1)
+accuracy_metric <- accuracy(predictions, truth = Potability, estimate = predicted_class)
+brier_metric <- brier_class(predictions, truth = Potability, .pred_1)
+precision_metric <- precision(predictions, truth = Potability, estimate = predicted_class)
+recall_metric <- recall(predictions, truth = Potability, estimate = predicted_class)
+
+# combining metrics for easy display
+metrics <- tibble(
+  roc_auc = roc_auc_metric$.estimate,
+  accuracy = accuracy_metric$.estimate,
+  brier_score = brier_metric$.estimate,
+  precision = precision_metric$.estimate,
+  recall = recall_metric$.estimate
+)
+
+metrics
+
+```
+
+> **(iv) Comment on the goodness-of-fit of your model and its predictive power.**
+>
+> The following `metrics` being discussed and used to determine the 'goodness-of-fit' are those generated in the code chunk above, and outlined in **(ii)**.
+>
+> For my model, an ROC AUC value of 0.5 indicates a model with no discriminatory power (similar to random guessing), while a value of 1.0 would indicate perfect discrimination – 0.47 indicates weak discriminatory power, suggesting a weak model. A brier score of 0.24 is not a bad predictor to how well predicted probabilities align. Precision of 0.37 is disappointing for this model, and recall of 0.5 is average. Finally, an accuracy of 46% suggests that the model predicts the wrong value more often than it predicts the correct model.
+>
+> All of these suggest there is room for improvement, and that it is not the best fitting model nor has the best predictive power (with a dependent variable such as `Potability`, you would want a stronger performing model to determine if water is drinkable or not).
+
+**(b) Come up with a feature selection or feature engineering or model selection strategy and try to get a better model performance than you had before.**
+
+In the following section I try to improve upon the baseline by applying PCA and LASSO.
+
+To perform PCA, we can integrate it as a step in a recipe:
+
+```{r}
+pca_recipe <-
+  recipe(Potability ~ ., data = wp_train) %>%
+  # remove zero variance predictors as they don't carry any information
+  step_zv(all_numeric_predictors()) %>%
+  # normalize the data to avoid out-sized impact of some variables
+  step_normalize(all_numeric_predictors()) %>%
+  step_pca(all_numeric_predictors(), num_comp = 9, keep_original_cols=FALSE) %>%
+  # we append prep here in order to use the recipe on its own with bake() to preview our data
+  prep()
+
+
+pca_data = pca_recipe %>%
+  bake(wp_train) %>%
+  # reordering the columns here so we can see our 5 principal components first
+  select(PC1, PC2, PC3, PC4, PC5, Potability, everything())
+  
+head(pca_data)
+```
+
+We can visualize how much variance is contained in each principal component, which can help us decide how many dimensions we want to keep. There are two graphs shown below – "Variance Explained", which shows the amount of variance attributable to each PC, and "Cumulative Variance Explained", showing the cumulative variance from PC1 to PC9.
+
+```{r}
+# we just want to extract the fitted PCA "model" hidden in the recipe
+pca_fit <- pca_recipe$steps[[3]]$res
+
+# the eigenvalues determine the amount of variance explained by each component
+eigenvalues <-
+  pca_fit %>%
+  tidy(matrix = "eigenvalues")
+
+eigenvalues %>%
+  ggplot(aes(PC, percent)) +
+  geom_col() +
+  geom_text(aes(label = round(percent, 2)), vjust = -0.2, size = 3) +
+  labs(title = "Variance Explained") +
+  scale_x_continuous(breaks = 1:10) +  # Adjust the range as needed
+  theme(axis.text.x = element_text(size = 10))
+
+eigenvalues %>%
+  ggplot(aes(PC, cumulative)) +
+  geom_col()+
+  geom_text(aes(label = round(cumulative, 2)), vjust = -0.5, size=3) +
+  labs(title="Cumulative Variance Explained") +
+  scale_x_continuous(breaks = 1:10) +  # Adjust the range as needed
+  theme(axis.text.x = element_text(size = 10))
+```
+
+Now we have an understanding of the PCs, we’ll start with a baseline model - no LASSO or PCA - to establish a reference point, to which I will try to improve. I have not used my own baseline model, `baseline`, as this model needs to use the recipe previously declared.
+
+```{r}
+lr_model = 
+  logistic_reg(penalty=0.0, mixture=1) %>%
+  set_engine('glmnet')
+
+set.seed(123)
+folds <- vfold_cv(wp_train, v = 5)
+
+no_pca_recipe =
+  recipe(Potability ~ ., data = wp_train)
+
+lr_workflow <- 
+  workflow() %>% 
+  add_model(lr_model) %>% 
+  add_recipe(no_pca_recipe)
+
+lr_fit_rs = lr_workflow %>%
+  fit_resamples(folds)
+
+collect_metrics(lr_fit_rs)
+```
+
+[What Do These Baseline Metrics Tell Us?]{.underline}
+
+**Accuracy:** The model correctly predicted the outcome for about 60.6% of the cases in the validation or test data. While an accuracy of 60.6% can be acceptable in some contexts, it typically indicates a model with room for improvement, especially if the dataset has an imbalanced distribution (e.g., a dominant class).
+
+**ROC AUC:** An AUC of 0.51 suggests that the model performs slightly better than random guessing, implying that it struggles to differentiate between the positive and negative classes effectively.
+
+**Brier Score:** A Brier score of 0.242 suggests that the predicted probabilities have a moderate level of accuracy, with some error in probability estimation.
+
+Overall, these metrics tell us that there is room for improvement.
+
+[The Next Step: setting a LASSO penalty, and determining the number of PCs]{.underline}
+
+Now, I could choose a penalty, and look at the "Cumulative Variance Explained" graph and follow the (more or less arbitrary) rule of thumb suggesting I keep at least 80% of the variance. However, selecting a value by hand or based on a dubious rule of thumb isn’t very scientific. The solution is the test set - we want to do what works best on the test set. I have displayed this in a Grid Search below.
+
+```{r}
+lr_model = 
+  logistic_reg(penalty=tune(), mixture=1) %>%
+  set_engine('glmnet')
+
+pca_tune_recipe =
+  recipe(Potability ~ ., data = wp_train) %>%
+  step_zv(all_numeric_predictors()) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  step_pca(all_numeric_predictors(), num_comp=tune())
+
+tune_workflow <- 
+  workflow() %>% 
+  add_model(lr_model) %>% 
+  add_recipe(pca_tune_recipe)
+
+
+pca_grid <- expand.grid(num_comp = 1:9, 
+                        penalty=c(0.001, 0.005, 0.01, 0.02, 0.05, 0.08))
+
+tune_results <-
+  tune_grid(tune_workflow, 
+            resamples = folds, 
+            grid = pca_grid)
+
+
+collect_metrics(tune_results) %>%
+  filter(.metric == "accuracy") %>%
+  ggplot(aes(x = factor(num_comp), y = factor(penalty), fill = mean)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  labs(
+    title="Grid Search Results", x = 'Number of Principal Components', 
+    y = 'LASSO Penalty',fill = 'Accuracy'
+  ) +
+  geom_text(aes(label = round(mean, 3)), color = "white", size = 3, fontface = "bold")
+```
+
+In interpreting this grid, I find that the highest level of accuracy (60.7%) is attributable to all principle components, and a LASSO penalty of 0.001. From this, it is clear that performing PCA is pointless, we do not have a better model for predicting water potability through dimensionality reduction.
+
+Finally, the last thing to do following this process is choose a final model, retrain it on the full dataset, and compute the final test set metrics. The final model is selected by using the `select_by_one_std_err` function which selects the simplest model that is within one standard error of the best model.
+
+```{r}
+# Select the chosen model from the tuning results
+chosen_model <- tune_results %>%
+  select_by_one_std_err(metric = "accuracy", desc(penalty), desc(num_comp))
+
+# Finalize the workflow using the chosen model
+final_wf <- 
+  tune_workflow %>% 
+  finalize_workflow(chosen_model)
+
+# Fit the finalized workflow on the training set and evaluate on the test set
+final_fit <- 
+  final_wf %>%
+  last_fit(wp_split)
+
+# Generate predictions from the final model on the test set
+predictions <- final_fit %>%
+  collect_predictions()
+
+# Convert predictions to factors for precision and recall calculations
+predictions <- predictions %>%
+  mutate(
+    .pred_class = factor(if_else(.pred_1 > 0.4, "1", "0"), levels = c("1", "0")),  # Ensure the class labels are factors
+    Potability = factor(Potability, levels = c("1", "0"))  # Ensure the true values are factors
+  )
+
+# Calculate precision and recall along with other metrics
+precision_metric <- precision(predictions, truth = Potability, estimate = .pred_class)
+recall_metric <- recall(predictions, truth = Potability, estimate = .pred_class)
+
+# Combine the precision and recall metrics into a tibble
+precision_tibble <- tibble(
+  .metric = "precision",
+  .estimator = "binary",
+  .estimate = precision_metric$.estimate
+)
+
+recall_tibble <- tibble(
+  .metric = "recall",
+  .estimator = "binary",
+  .estimate = recall_metric$.estimate
+)
+
+# Combine all metrics including precision and recall
+metrics <- collect_metrics(final_fit) %>%
+  bind_rows(precision_tibble, recall_tibble)
+
+# Print the metrics including precision and recall
+print(metrics)
+
+```
+
+The analysis demonstrates that applying PCA and LASSO penalties did not lead to an improved model. Instead, the final model underperforms compared to the baseline `lr_model`, with declines in accuracy, ROC AUC (now below 0.5, indicating performance worse than random guessing), and calibration as indicated by the increased Brier Score. Additionally, both precision and recall have decreased, further emphasizing the model's inability to make reliable predictions. These results suggest that the chosen modifications were not effective for this dataset and problem, highlighting the need for alternative approaches, such as revisiting feature engineering, or tuning hyperparameters more effectively.
+
+### Use of AI and Generative Tools
+
+I can confirm that there has been the use of AI tools within this summative assessment.
+
+I have detailed this use at every stage of implementation.
+
+### Bibliography
+
+[Outliers in Statistics: How to Find and Deal with Them in Your Data]('https://cxl.com/blog/outliers/')
+
+[How to Windorise in R]('https://www.r-bloggers.com/2011/06/winsorization/')
+
+[UCLA Statistical Methods and Data Analytics]('https://shorturl.at/D8AvS')

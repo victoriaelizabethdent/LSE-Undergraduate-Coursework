@@ -1,0 +1,725 @@
+---
+title: "DS202A - W11+1 Summative"
+author: "47342"
+output: html
+self-contained: true
+---
+
+## DS202A: Data for Social Scientists, W11+1 Summative
+
+**RStudio Setup** (i.e. importing packages and libraries)
+
+```{r}
+library("quanteda")
+library("quanteda.textstats")
+library("quanteda.textplots")
+library("quanteda.textmodels")
+library("dplyr")
+library("spacyr")
+library("tidyverse") 
+library("tidymodels")
+library("tidytext")
+library("tidystm")
+library("vip")
+library("stringr")
+library("textdata")
+```
+
+## Part I: Similarity (40 marks)
+
+**Suppose we want to calculate the similarity between the posts (i.e. Truths).**
+
+**How would you approach this task? What insights do you derive from this calculation?**
+
+Firstly, before confirming, reinforcing, or complementing my similarity analysis with code implementation, I will outline my approach to this task and the expected insights that I anticipate from my calculations to establish a clear framework for how I intend to approach the data and what I hope to uncover through the analysis. This begins with determining what makes two posts (Truths) similar, or dissimilar.
+
+> **What is Similarity?**
+>
+> There are two types of "similarity" I would explore using the themes taught in this course.
+>
+> 1.  **Semantic Similarity**
+>
+>     The degree to which two pieces of text share similar meanings or convey similar concepts, irrespective of the specific words used. This similarity is based on underlying ideas or concepts behind the text, rather than the exact words or phrases used.
+>
+>     In regards to Truth Social, semantic similarity will allow me to measure the degree to which two posts convey similar meanings or ideas, e.g. a post praising Trump's 2024 re-election campaign and one advocating for him to run again would have high similarity in this respect.
+>
+> 2.  **Lexical Similarity**
+>
+>     The degree to which two pieces of text share common words or terms, *regardless* of the underlying meaning. It is based on the vocabulary used in the text rather than the ideas or concepts behind the text – in other words, it measures shared words between two pieces of text.
+>
+>     In regards to Truth Social, lexical similarity will allow me to measure the degree to which two posts share overlapping words or phrases, focusing on the vocabulary used rather than the meaning behind the text. This approach measures similarity based purely on the presence of common terms. I believe I would highly benefit from the addition of hashtag data to complement this similarity analysis.
+>
+> Additionally, to enrich the exploration of similarity between posts, I propose an an examination of engagement metrics (such as ReTruths, replies, and likes) to complement lexical and semantic similarity by focusing on how Truths resonate with the audience and how users engage with them. This can lead to a further enriched analysis of similarity by exploring if similar Truths are interacted with at similar rates.
+>
+> ***N.B.** I understand that algorithms play a significant role in determining the visibility of Truths, influencing their likelihood of receiving engagement. However, I believe that examining engagement metrics could still yield valuable insights into the analysis of similarity.*
+>
+> **How Can Conclusions Be Drawn?**
+>
+> In order to measure similarity, ideally a custom similarity metric, taking in all types of similarity would be drawn; it would be a weighted similarity score that combines semantic and lexical similarity scores, accounting for the identification of similar themes and the unique language patterns on the platform (e.g. capital letters for emphasis). However, throughout **Part I: Similarity**, there are many different things I have measured. Some of these include the NRC Emotion Lexicon measuring positive/negative sentiment, and eight basic emotions, NER and how we could measure within-entity similarity/dissimilarity and the same across entities and throughout time, etc. This makes the task of creating a custom similarity metric extremely difficult for my analysis, and each one should be explored individually unless stated otherwise.
+
+### An Analysis of Similarity
+
+The first step, as with all data analysis, is to load the data into our environment, and inspect it. If we inspect the `truth` data, we can see that it includes replies to other Truths, ReTruths (where the Truth appears on the users' posts, but cannot be liked, ReTruth-ed, or replied to as one can only perform these actions on the original Truth) and others are individual Truths (original posts made by users which represent new, standalone content). In understanding this, I have split these into separate data frames, and `individual_truths` will be used for an example of the analysis.
+
+```{r setup, message=FALSE, warning=FALSE, echo=FALSE}
+truths <- read_tsv('truth_social/truths.tsv')
+hashtags <- read_tsv('truth_social/hashtags.tsv')
+
+# individual Truths
+individual_truths <- truths %>%
+  filter(is_retruth == FALSE, is_reply == FALSE, !is.na(text))
+
+# replies to Truths
+replies <- truths %>%
+  filter(is_reply == TRUE, !is.na(text))
+
+# ReTruths
+retruths <- truths %>%
+  filter(is_retruth == TRUE, !is.na(text))
+```
+
+#### Semantic Similarity
+
+In order to calculate 'similarity', Natural Language Processing (NLP) is required. I will be using `quanteda`, as has been taught in DS202A, and show a word cloud to visualise the relative frequency of each token, focusing on `individual_truths`, as discussed previously.
+
+```{r}
+# generating a corpus
+individual_truths_corpus <- 
+  individual_truths %>%
+  # remove URLs
+  mutate(text = gsub("https?://\\S+", "", text)) %>%
+  # remove emojis
+  mutate(text = gsub("<emoji:[^>]+>", "", text)) %>%
+  # remove dates (causing issues with the wordcloud visualisation)
+  mutate(text = gsub("\\d{4}-\\d{2}-\\d{2}", "", text)) %>%
+  # remove all single character tokens
+  mutate(text = gsub("\\b[a-zA-Z0-9]\\b", "", text)) %>% 
+  # generate corpus
+  corpus(text_field = "text")
+
+# generating tokens
+individual_truths_tokens <- 
+  tokens(individual_truths_corpus, 
+         remove_punct = TRUE, 
+         remove_symbols = TRUE, 
+         remove_numbers = TRUE) %>% 
+  # removing stopwords removes words that do not give information (e.g. pronouns, 'is', etc.)
+  tokens_remove(pattern = stopwords("en")) # default stopwords under "en"
+
+# converting tokens into a document feature matrix (DFM)
+individual_truths_dfm <-
+  individual_truths_tokens %>%
+  dfm()
+```
+
+```{r}
+textplot_wordcloud(individual_truths_dfm)
+```
+
+**NRC Emotion Lexicon**[^1]
+
+[^1]: https://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm
+
+For sentiment analysis, I will use the NRC Emotion Lexicon, a list of English words and their associations with eight basic emotions (anger, fear, anticipation, trust, surprise, sadness, joy, and disgust) and two sentiments (negative and positive). A more insightful word cloud, one which visualises the relative frequency of each token while distinguishing the eight emotions, is shown below.
+
+```{r}
+nrc_lexicon <- textdata::lexicon_nrc()
+nrc_dict <- dictionary(
+  list(
+    anger = nrc_lexicon %>% filter(sentiment == "anger") %>% pull(word),
+    anticipation = nrc_lexicon %>% filter(sentiment == "anticipation") %>% pull(word),
+    disgust = nrc_lexicon %>% filter(sentiment == "disgust") %>% pull(word),
+    fear = nrc_lexicon %>% filter(sentiment == "fear") %>% pull(word),
+    joy = nrc_lexicon %>% filter(sentiment == "joy") %>% pull(word),
+    sadness = nrc_lexicon %>% filter(sentiment == "sadness") %>% pull(word),
+    surprise = nrc_lexicon %>% filter(sentiment == "surprise") %>% pull(word),
+    trust = nrc_lexicon %>% filter(sentiment == "trust") %>% pull(word)
+  )
+)
+```
+
+```{r}
+# to visualise sentiment analysis, each basic emotions has been assigned a colour
+emotion_colours <- c(
+    anger = "red",
+    fear = "darkorange",
+    anticipation = "yellow",
+    trust = "blue",
+    surprise = "purple",
+    sadness = "skyblue",
+    joy = "green",
+    disgust = "brown")
+
+# map each word in the original DFM (`individual_truths_dfm`) to an emotion (ChatGPT)
+word_colours <- sapply(
+  featnames(individual_truths_dfm),  # Extract all words (features) from the DFM
+  function(word) {
+    # Check which emotions the word belongs to in the NRC lexicon
+    word_emotions <- names(nrc_dict)[sapply(nrc_dict, function(emotion_words) word %in% emotion_words)]
+    
+    if (length(word_emotions) > 0) {
+      # If the word is linked to any emotion, assign it the color of the first emotion
+      return(emotion_colours[word_emotions[1]])
+    } else {
+      # If no emotion is linked, assign the word a default color (black)
+      return("black")
+    }
+  }
+)
+
+# generate the word cloud using the original DFM and the assigned colors
+textplot_wordcloud(
+  x = individual_truths_dfm,  
+  scale = c(3, 0.5),        
+  random_order = FALSE, 
+  # use the mapped colors for each word
+  color = word_colours        
+)
+```
+
+```{r}
+# tokenise the text into individual words
+individual_truths_tokens <- individual_truths %>%
+  unnest_tokens(word, text) %>%
+  mutate(word = tolower(word))
+
+# join the tokens with the NRC lexicon
+individual_truths_emotions <- individual_truths_tokens %>%
+  inner_join(nrc_lexicon, by = "word") %>%
+  # count occurrences of each sentiment per post
+  count(id, sentiment, sort = TRUE)  
+
+# a summarised table of sentiment scores for each post
+individual_truths_summary <- individual_truths_emotions %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(anger = ifelse(is.na(anger), 0, anger),
+         joy = ifelse(is.na(joy), 0, joy),
+         sadness = ifelse(is.na(sadness), 0, sadness),
+         surprise = ifelse(is.na(surprise), 0, surprise))
+
+# view the summarised sentiment scores
+head(individual_truths_summary)
+
+# view the resulting sentiment counts for each post
+head(individual_truths_emotions)
+
+```
+
+```{r}
+# defining positive and negative sentiment categories (removal of "surprise" due to ambiguity)
+positive_sentiments <- c("positive", "joy", "trust", "anticipation")  # positive emotions
+negative_sentiments <- c("negative", "anger", "fear", "sadness", "disgust")  # negative emotions
+
+# categorising the sentiment of each post as positive or negative
+individual_truths_emotions <- individual_truths_emotions %>%
+  mutate(sentiment_category = case_when(
+    sentiment %in% positive_sentiments ~ "Positive",
+    sentiment %in% negative_sentiments ~ "Negative",
+  ))
+
+# counting the number of positive and negative posts
+sentiment_counts <- individual_truths_emotions %>%
+  count(sentiment_category)
+
+# generating a bar plot of positive vs. negative sentiments
+ggplot(sentiment_counts, aes(x = sentiment_category, y = n, fill = sentiment_category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Distribution of Positive vs. Negative Sentiment in Posts",
+       x = "Sentiment Category",
+       y = "Count of Posts") +
+  scale_fill_manual(values = c("Positive" = "green", "Negative" = "red")) +
+  theme_minimal()
+
+```
+
+**Named Entity Recognition (NER)**
+
+In this, we can see that while there are a lot of words with semantic meaning, a lot are nouns (people, places or things, such as Trump, Biden, Ukraine, etc.). On this note, I would explore similarity of posts regarding through an exploration of NER (Named Entity Recognition), search truths for these entities and then determine positive/negative sentiment using NRC Emotion Lexicon.
+
+> I have tried to provide some code for this, as an example of what could be used to determine similarity. I did, however, find trouble with loading an NLP that can perform NER (`text`, `cleanNLP` and `spaCyr`). As this was unavailable to show, I will detail my approach and the steps I *would* take (code is commented for the chunks to run).
+>
+> 1.  Use an NER tool to identify entities in truths, and store these extracted entities with their types and the posts they are associated with.
+>
+>     | EntityID | Entity                   | Type                 |
+>     |----------|--------------------------|----------------------|
+>     | 1        | Donald Trump             | Person               |
+>     | 2        | United States of America | Country              |
+>     | 3        | Tesla                    | Company/Organisation |
+>
+>     (***N.B.** this list could be manually added to, for example 'January 6th', or 'Mar-a-Largo', as these may not be universal entities).*
+>
+> 2.  For each entity identified, search the dataset for all Truths that mention it, and create a mapping between them.
+>
+> 3.  Use the NRC emotion lexicon to identify aggregated sentiment using the tokens made previously)
+>
+>     ```{r}
+>     # example NER data frame
+>     # ner_data <- tibble(
+>     #   post_id = c(1, 2, 3),
+>     #   entity = c("Donald Trump", "United States of America", "Tesla"),
+>     #   type = c("PERSON", "COUNTRY", "COMPANY")
+>     # )
+>
+>     # Combine with sentiment data
+>     # entity_sentiment <- ner_data %>%
+>     #   left_join(sentiment_summary, by = "post_id")
+>     ```
+>
+> 4.  From here, similarity can be explored within-entities (comparing the sentiment of posts that discuss the same entity), across-entities (analyse whether posts mentioning similar entities (e.g., `Tesla` and `SpaceX`) have overlapping sentiments or emotions), or temporally (examine how sentiments around specific entities evolve over time, and in response to key events). An example of within-entity is below.
+>
+> ```{r}
+> # Group Posts by Entity: after linking posts to entities (from NER), group posts discussing the same entity.
+> # entity_grouped <- entity_sentiment %>%
+> #   group_by(entity) %>%
+> #   summarize(
+> #     positive = sum(positive, na.rm = TRUE),
+> #     negative = sum(negative, na.rm = TRUE),
+> #     sentiment = case_when(
+> #       positive > negative ~ "Positive",
+> #       negative > positive ~ "Negative",
+> #       TRUE ~ "Neutral"
+> #     ),
+> #     text = paste(text, collapse = " ") # combine all text for similarity
+> #   )
+> ```
+>
+> **How Can This Be Measured?** Cosine Similarity
+>
+> -   Cosine similarity uses vector representations of text (e.g. with TF-IDF or word embeddings), and can capture semantic content more effectively than simpler methods like Jaccard similarity, which only measures the overlap of words.
+>
+> It would be implemented in a way similar to this, where the values in the similarity matrix will range from 0 (no similarity) to 1 (perfect similarity), based on how similar the texts are to each other. This can help identify posts that are highly similar in sentiment or content.
+>
+> ```{r}
+> # create a DFM for entity texts
+> # entity_texts_dfm <- dfm(entity_grouped$text)
+>
+> # calculate pairwise cosine similarity between posts
+> # similarity_matrix <- textstat_simil(entity_texts_dfm, method = "cosine")
+>
+> # convert the similarity matrix to a data frame
+> # similarity_df <- as.data.frame(as.matrix(similarity_matrix))
+> ```
+
+#### Lexical Similarity
+
+I have previously defined that my analysis of lexical similarity should measure degree to which two pieces of text share common words, terms, or stylistic elements *regardless* of any underlying meaning – it is based on vocabulary rather than the ideas or concepts behind the text. By observing some Truths, I have observed some intriguing platform-specific behaviors:
+
+1.  Aggression (in Stylistic Elements)
+
+    As Truth Social is a text-based social media platform, the use of capital letters, exclamation marks (`!!!`), and emojis (e.g. 😡) often convey heightened emotion and hostility, signalling frustration or anger.
+
+2.  Symbolism and Patriotism
+
+    It is unsurprising that patriotism is a prevelant theme of Truth Social. There is a high frequency of "solo-chants", as I would call them (i.e. Truths which seem to chant "USA"), symbols (emojis) such as the flag of the United States of America (🇺🇸) and the emblem of the nation, the Eagle (🦅). Truths which contain "🇺🇸" and words such as "freedom" may cluster around patriotic sentiment.
+
+[Pre-Processing Considerations]{.underline}
+
+In **Semantic Similarity**, creating sample tokens involved `remove_punct = TRUE, remove_symbols = TRUE, remove_numbers = TRUE`, which remove punctuation marks, non-alphabetic and currency symbols and all numeric characters. Often, this process also involves lowercase conversion. As I want to primarily explore stylistic elements, these paramaters should be adjusted, as in order to explore angry emotion, or shouting expressions, lowercase conversion and the removal of certain punctuation marks (namely exclamation marks) should be avoided. Furthermore, an analysis of emojis such as 🇺🇸 (in text as `<emoji: us>`) or 🦅 (`<emoji: eagle>`) require mathematical symbols and punctuation marks (colons) to be included.
+
+**Aggression (in Stylistic Elements)**
+
+As aggression can often be indicated by capitalised text, I would first define a threshold where a post with a certain percentage of uppercase letters could be considered aggressive. I would do the same for instances of multiple exclamation marks (and test to see if this can signify heightened emotion when the number of exclamation marks is greater than 1, or 2, etc.). The final markers of emotion are emojis, such as 😡, 🙄, or 🔥 as specific "aggressive" or "frustration" emojis. In creating a measure for this, it could look something like the code below.
+
+```{r}
+# a function to detect aggression/frustration
+detect_aggression_frustration <- function(text) {
+  # detect capital letters (more than 50% of the text in uppercase)
+  capital_letters <- sum(str_count(text, "[A-Z]")) / nchar(text) > 0.5
+  
+  # detect exclamation marks (more than one exclamation mark)
+  exclamation_marks <- str_count(text, "!{2,}") > 0
+  
+  # detect aggressive emojis
+  aggressive_emojis <- str_detect(text, "<emoji: angry>|<emoji: fire>|<emoji: rage|<emoji: face_with_rolling_eyes>")
+  
+  # combine conditions to detect aggression
+  return(as.integer(capital_letters | exclamation_marks | aggressive_emojis))
+}
+
+# apply the aggression detection function
+truths$aggression <- sapply(truths$text, detect_aggression_frustration)
+
+# view results
+print(individual_truths)
+```
+
+In evolving this further, I would modify the aggression detection to provide a scale rather than a binary result based on the number of aggressive indicators (capital letters, aggressive emojis, exclamation marks). This way, each parameter contributes to the aggression score, but for a low-level analysis, a binary result is fine. Furthermore, a more comprehensive list of aggressive/frustrated emojis would have to be developed.
+
+**Symbolism and Patriarchy**
+
+On Truth Social, expressions of patriotism are common, often conveyed through symbolic representations like the flag of the United States of America, the eagle 🦅, or through phrases that emphasise national pride, like "freedom" or "liberty". These symbols can indicate a strong sense of allegiance to the nation. Additionally, religious symbols, particularly those associated with Christianity, such as the cross, or references to "God", play a significant role in shaping the narratives around traditional values. To measure the presence of these symbols, I would define a threshold for posts that contain these emojis or keywords, reflecting their association with patriotic or religious sentiment. The following code could help identify and quantify these thematic markers.
+
+```{r}
+# symbols to look for
+patriotism <- c("<emoji: usa>", "<emoji: eagle>")
+christianity <- c("<emoji: latin_cross>", "<emoji: pray>", "<emoji: raised_hands>")
+
+# function to detect patriotism
+detect_patriotism <- function(text, symbols) {
+  # check if any patriotic symbols appear in the text
+  any(str_detect(text, patriotism))
+}
+
+# function to detect christianity
+detect_christianity <- function(text, symbols) {
+  # check if any christian symbols appear in the text
+  any(str_detect(text, christianity))
+}
+
+# apply the function
+individual_truths$patriotism <- sapply(individual_truths$text, detect_patriotism, symbols = patriotism)
+# apply the function
+individual_truths$christianity <- sapply(individual_truths$text, detect_christianity, symbols = christianity)
+
+# View results
+print(individual_truths)
+```
+
+To improve the analysis, a more comprehensive list of symbols should be included, capturing a wider variety of patriotic, religious, and other relevant imagery that may influence sentiment. Additionally, integrating Bible quotes or religious references into the analysis could help to capture the sentiment around religious themes more effectively. As was mentioned for `detect_aggression_frustration`, a binary metric is not ideal, but it does allow for a simple measure of similarity/dissimilarity among Truths.
+
+#### **Engagement Metrics**
+
+After devising our custom similarity metric, we can engage in exploring the intersection of similarity and engagement to gain some fascinating statistics as to the themes of Truths that are most/least engaged with. This would start with a calculation of the Truths with the most likes, ReTruths and replies.
+
+```{r}
+engagement_summary <- truths %>%
+  summarise(
+    most_likes = truths %>% arrange(desc(like_count)) %>% distinct(id, .keep_all = TRUE) %>% head(n=20) %>% pull(text),
+    most_retruths = truths %>% arrange(desc(is_retruth)) %>% distinct(id, .keep_all = TRUE) %>% head(n=20) %>% pull(text),
+    most_replies = truths %>% arrange(desc(is_reply)) %>% distinct(id, .keep_all = TRUE) %>% head(n=20) %>% pull(text),
+  )
+
+# print the most engaging posts
+print(engagement_summary)
+```
+
+We could ask questions like...
+
+1.  What seem to be the themes of Truths that have a high like/ReTruth/reply count?
+
+2.  Does sentiment or lexical similarity correlate with higher engagement?
+
+3.  Are polarizing posts more likely to go viral?
+
+4.  Is hashtag usage a significant factor in driving engagement?
+
+**Ideas for Further Exploration Beyond the Time Constraints of This Assessment**
+
+-   [Hashtags]{.underline}
+
+    A semantic and lexical bridge that provides deeper context and connections between posts, if I had the next step I would take would be to explore the use of hashtags within Truths. It would be a fascinating measure to see not only which ones are highly used (as we can imagine #MAGA is), but to see if the content of the Truth (if there is content that is not a hashtag), is similar.
+
+-   [Exploring Outliers and Clustering]{.underline}
+
+    DBSCAN (a type of clustering technique) could group Truths on sentiment, lexical features, or topic, helping identify posts that stand out for whatever reason. Outliers would represent extreme cases of sentiment or unique stylistic patterns, providing insights into the fringes of the discourse.
+
+-   [Tracking Sentiment Over Time]{.underline}
+
+    A time series analysis could be performed to track sentiment fluctuations during key political events and identify shifts around specific topics. This could reveal how public opinion evolves over time.
+
+-   [Exploring Similarity of Engagement]{.underline}
+
+    We could ask the question if replies tend to agree with the original truth. This could provide insight as to the culture of Truth Social, addressing concerns about its "echo chamber" culture[^2]
+
+[^2]: <https://www.independent.co.uk/news/world/americas/elon-musk-truth-social-twitter-trump-b2198558.html>
+
+## Part II: Unsupervised Learning (60 marks)
+
+**Propose [one compelling research question]{.underline} that a social scientist could investigate with this dataset using the *unsupervised learning methods* covered in this course. How would you answer the research question with these methods, in particular:**
+
+> 1.  **Which dataset features would you use to answer your question? Why? Is there any feature engineering involved?**
+>
+> 2.  **Which unsupervised learning methods would you use to answer your question? Why?**
+>
+> 3.  **(If you wrote any code) How would you interpret the results of your methods?**
+>
+> 4.  **Do you see a supervised learning approach being feasible for your research question? Why? Why not?**
+
+#### "How Did Truth Social Users React to the Roe v. Wade Overturn, and the Parties Involved (e.g. the Supreme Court, Women)?"
+
+> **What is Roe vs. Wade?**
+>
+> "**Roe v. Wade**, 410 U.S. 113 (1973), was a landmark decision of the **U.S. Supreme Court** in which the Court ruled that the **Constitution** of the United States protected a right to have an abortion. The decision struck down many abortion laws, and it sparked an ongoing abortion debate in the United States about whether, or to what extent, abortion should be legal, who should decide the legality of abortion, and what the role of moral and religious views in the political sphere should be. On June 24th 2022, the **Supreme Court** overruled **Roe** in **Dobbs v. Jackson Women's Health Organization** on the grounds that the substantive right to abortion was not "deeply rooted in this Nation's history or tradition", nor considered a right when the **Due Process Clause** was ratified in 1868, and was unknown in U.S. law until **Roe**."[^3]
+>
+> **Who are the "Involved" Parties?**
+>
+> -   Women
+>
+> -   U.S. Supreme Court Justices
+>
+>     -   Justice Samuel Alito, Justice Clarence Thomas, Justice Neil Gorsuch, Justice Brett Kavanaugh, Justice Amy Barrett, Justice John Roberts
+>
+> -   Proponents of Overturning Roe vs. Wade
+>
+>     -   Anti-Abortion Activists: e.g. March for Life, National Right to Life Committee, and Susan B. Anthony Pro-Life America
+>
+> -   Opponents of the Overturn
+>
+>     -   Abortion Rights Advocates: e.g. Planned Parenthood, NARAL Pro-Choice America, and the Center for Reproductive Rights
+>
+>     -   Democratic Politicians: e.g. President Joe Biden, Nancy Pelosi, Alexandria Ocasio-Cortez, and various Democratic members of Congress
+>
+> -   State Officials
+>
+>     -   Mississippi Governor Tate Reeves: at the center of the case was Mississippi’s ban on most abortions after 15 weeks, signed by Reeves.
+>
+>     -   Texas Governor Greg Abbott: signed Texas’ restrictive abortion laws, part of the broader political context leading to the case.
+
+[^3]: https://en.wikipedia.org/wiki/Roe_v.\_Wade
+
+#### **Which Data Set Features Would You Use to Answer Your Question? Why?**
+
+-   `truths.tsv`'s `text` column
+
+    -   This contains the contents of posts on Truth Social.
+
+-   `is_reply`, `is_retruth`, `like_count`, and other engagement metrics
+
+    -   With each Truth, there are details about how the Truth is engaged with, such as replies and ReTruths.
+
+    -   The engagement on posts can give an indication of the intensity of reactions to certain topics – analyzing how engagement correlates with sentiment could be useful.
+
+-   `timestamp` of each Truth
+
+    -   The use of this feature is critical for analysing temporal trends in discourse surrounding (i.e. before and after) Roe vs. Wade's overturn.
+
+-   `hashtags` from `hashtags.tsv`
+
+    -   This feature is valuable for thematic analysis as hashtags related to specific events (e.g. `#RoevWade`, `#abortion`) provide insights into how discussions evolve around these events, and allow for easy identification as to the topic of a Truth without NLP.
+
+#### **Is There Any Feature Engineering Involved?**
+
+[Sentiment Analysis]{.underline}
+
+Sentiment lexicons (like VADER, NRC Emotion Lexicon, as used in **Part I: Similarity**, or custom lexicons related to political discourse) assign sentiment scores to each post. These scores can represent positive or negative sentiment (with NRC including "eight basic emotions") and this score can be used to track sentiment over time and across events. To identify this specific political event, a custom lexicon would ideally be used, but due to time constraints and the complexity of developing a comprehensive lexicon tailored to political discourse, I will continue to use NRC Emotion Lexicon, and (as in **Part I**), use `individual_truths`.
+
+```{r}
+# converting the nrc_lexicon to a dictionary
+nrc_lexicon <- textdata::lexicon_nrc()
+nrc_list <- split(nrc_lexicon$word, nrc_lexicon$sentiment)
+nrc_dict <- dictionary(nrc_list)
+
+individual_truths_tokens <- tokens(individual_truths$text)
+sentiment_tokens <- tokens_lookup(individual_truths_tokens, dictionary = nrc_dict)
+
+```
+
+```{r}
+# convert the sentiment tokens into a data frame for analysis
+sentiment_df <- data.frame(
+  text = individual_truths$text,
+  positive = sapply(sentiment_tokens, function(x) sum(x == "positive")),
+  negative = sapply(sentiment_tokens, function(x) sum(x == "negative"))
+)
+
+# calculate overall sentiment score (simple sum of positive - negative)
+sentiment_df$overall_sentiment <- sentiment_df$positive - sentiment_df$negative
+
+# view results
+print(sentiment_df)
+
+```
+
+```{r}
+# plot the overall sentiment score for each post
+sentiment_df %>%
+  ggplot(aes(x = text, y = overall_sentiment)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Overall Sentiment of Posts on Roe v. Wade", x = "Post", y = "Sentiment Score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+[Named Entity Recognition]{.underline} – to address user's reactions to *"the parties involved"*
+
+As I stated in **Part I: Similarity**, despite my efforts to provide code here I had trouble loading an NLP that can perform NER (e.g. `text`, `cleanNLP` and `spaCyr`). As I did in **Part I: Similarity**, I detail my approach.
+
+1.  Use an NER tool to identify entities in truths, and store these extracted entities with their types and the posts they are associated with.
+
+| EntityID | Entity                  | Type        |
+|----------|-------------------------|-------------|
+| 1        | Justice Brett Kavanaugh | Person      |
+| 2        | Supreme Court           | Institution |
+| 3        | Roe vs. Wade            | Event       |
+
+2.  For each entity identified, search the dataset for the Truths that mention it, and create a mapping between them.
+
+3.  Use the NRC emotion lexicon to identify aggregated sentiment using the tokens made previously
+
+I can now engineer the data based on each entity and calculate the average sentiment score associated with each entity.
+
+I will give an example of how I would approach this, given `sentiment_score` is available and NER was working.
+
+```{r}
+# unnest entities to create a row for each entity (as they are stored in a list in `truths_data`)
+#truths_data_long <- truths_data %>%
+#  unnest(entities)
+
+# calculate the average sentiment score by entity
+#average_sentiment_by_entity <- truths_data_long %>%
+#  group_by(entities) %>%
+#  summarise(
+#    avg_sentiment = mean(sentiment_score, na.rm = TRUE),
+    # also counting how many times each entity is mentioned
+#    count = n()  
+#  )
+
+# display the results
+# print(average_sentiment_by_entity)
+```
+
+[Temporal Features]{.underline} – features that would help track sentiment shifts and hashtag usage around the Roe v. Wade overturn.
+
+1.  Creating Event Windows: windows that correspond to the overturn of Roe vs. Wade (`Pre` and `Post`) to accommodate for shifts in sentiment.
+
+    ```{r}
+    # the date of the Roe v. Wade decision
+    roe_v_wade_date <- as.Date("2022-06-24")
+
+    # 'truths' contains the timestamp of each post in 'timestamp' column
+    truths$timestamp <- as.Date(truths$timestamp)
+
+    # creating event windows: 'Pre' if before Roe v. Wade, 'Post' if after
+    truths$Event_Window <- ifelse(truths$timestamp < roe_v_wade_date, "Pre", "Post")
+    ```
+
+2.  Rolling Windows for Sentiment Analysis: this requires `sentiment_score` to be established in the data, and then sentiment can be analysed across rolling windows (e.g. weekly or monthly), which would allow insights into temporal sentiment trends surrounding specific events.
+
+```{r}
+# truths_data <- truths %>% 
+#   select(timestamp, sentiment_score) # the running of this code requires `sentiment_score` to be calculated and in `truths`
+
+# sort the data by timestamp
+# truths_data <- truths_data %>%
+#   arrange(timestamp)
+
+# window_size <- 7 # calculate rolling average of sentiment score for a window size of 7 days (adjustable)
+
+# truths_data <- truths_data %>%
+#   mutate(rolling_sentiment = sapply(1:n(), function(i) {
+      # get the timestamp of the current post
+      # current_timestamp <- timestamp[i]
+      # find the posts within the window (current post + previous posts within the window)
+      # filter posts where the difference between current and previous timestamp is <= window_size_days
+      # relevant_posts <- truths_data %>%
+      #   filter(timestamp <= current_timestamp & (current_timestamp - timestamp) <= window_size_days) %>%
+      #   pull(sentiment_score)
+      # calculate the mean sentiment score for the relevant posts within the window
+  #     mean_sentiment <- mean(relevant_posts, na.rm = TRUE)
+  #     return(mean_sentiment)
+  #   })
+  # )
+
+# view the result
+# print(truths_data)
+```
+
+[Aggression or Hostility Indicators:]{.underline} - same as **Part I: Similarity**
+
+```{r}
+# a function to detect aggression/frustration
+detect_aggression_frustration <- function(text) {
+  # detect capital letters (more than 50% of the text in uppercase)
+  capital_letters <- sum(str_count(text, "[A-Z]")) / nchar(text) > 0.5
+  
+  # detect exclamation marks (more than one exclamation mark)
+  exclamation_marks <- str_count(text, "!{2,}") > 0
+  
+  # detect aggressive emojis
+  aggressive_emojis <- str_detect(text, "<emoji: angry>|<emoji: fire>|<emoji: rage|<emoji: face_with_rolling_eyes>")
+  
+  # combine conditions to detect aggression
+  return(as.integer(capital_letters | exclamation_marks | aggressive_emojis))
+}
+
+# apply the aggression detection function
+truths$aggression <- sapply(truths$text, detect_aggression_frustration)
+
+# view results
+print(individual_truths)
+```
+
+And, as discussed previously, to improve this for better exploration, I would modify the aggression detection to provide a scale rather than a binary result based on the number of aggressive indicators (capital letters, aggressive emojis, exclamation marks). This way, each parameter contributes to the aggression score, but for a low-level analysis, a binary result is fine. Furthermore, a more comprehensive list of aggressive/frustrated emojis would have to be developed.
+
+#### **Which unsupervised learning methods would you use to answer your question? Why?**
+
+-   **Topic Modeling (Latent Dirichlet Allocation or LDA):** LDA would allow for the identification of topics in the posts based on the content and words associated with specific entities (e.g. the Supreme Court, or any others we could gain from NER, mentioned previously). I have made a start on what the code may look like below, but note that running it will cause error.
+
+```{r}
+# truths_dfm <- dfm(truths_corpus)
+
+# fitting an LDA model (here, we assume 10 topics, adjust as needed)
+# lda_model <- LDA(truths_dfm, k = 10, control = list(seed = 1234))
+
+# checking the top terms in each topic
+# terms(lda_model, 10)
+
+# topic probabilities for each post
+# topic_probs <- posterior(lda_model)$topics
+
+# View the topic distribution for each post
+# topic_probs
+```
+
+-   **Clustering (DBSCAN)**: Clustering algorithms like DBSCAN can group posts based on similarities in sentiment, content, or hashtags, allowing me to pinpoint Roe vs. Wade, or any other major political events. I have made a start on what the code may look like below, but note that running this code will cause error.
+
+```{r}
+# sentiment_scores <- truths_data$sentiment
+
+# creating a use TF-IDF for better vectorization
+# tfidf <- dfm_tfidf(truths_dfm)
+
+# using DBSCAN to clustering posts based on the TF-IDF features and sentiment scores
+# combined_features <- cbind(as.matrix(tfidf), sentiment_scores)
+
+# dbscan_result <- dbscan(combined_features, eps = 0.5, minPts = 2)
+
+# Visualize the DBSCAN clusters
+# plot(dbscan_result, main = "DBSCAN Clustering for Truth Social Posts")
+```
+
+-   **Sentiment Evolution Over Time**: I could analyse how sentiment (positive, negative, neutral) evolves over time using methods like hierarchical clustering or dimensionality reduction techniques (e.g. PCA). This would show how different events impact sentiment and whether certain events elicit stronger emotions.
+
+#### **(If you wrote any code) How would you interpret the results of your methods?**
+
+-   [Sentiment Analysis]{.underline}
+
+    -   The plot of the overall sentiment scores provides a visual representation of how sentiments vary across posts. A trend could be identified in sentiment, showing whether posts tend to become more negative or positive as political events, namely the Roe v. Wade decision, unfold.
+
+-   [Named Entity Recognition]{.underline}
+
+    -   NER provides us with a substantive answer as to Truth Social users' opinions toward the entities in the Roe vs. Wade case. If one enttity is mentioned with a consistently negative sentiment score, it may indicate disapproval of their actions. High sentiment around an entity might indicate a polarized response, either support or criticism based on political leanings.
+
+-   [Temporal Features (Event Windows and Rolling Windows)]{.underline}
+
+    -   A clear shift in sentiment from 'Pre' to 'Post' could suggest increased frustration or approval. Rolling windows can provide a smooth curve of sentiment change, capturing more subtle trends over time, and a large dip or peak in sentiment could indicate a key moment of public reaction.
+
+-   [Aggression or Hostility Indicators]{.underline}
+
+    -   A high number of aggressive posts (e.g. posts with capital letters or exclamation marks) might indicate heightened frustration, divisiveness, or polarisation. These posts could be linked to controversial statements or responses, showing where the debate has become more intense.
+
+-   [Topic Modeling (Latent Dirichlet Allocation or LDA)]{.underline}
+
+    -   Although the code provided for LDA is simply an introduction to how I would code topic modelling, if it were complete, I would get a set of topics that are most prominent during certain time periods (so it works well with the [Temporal Features]{.underline} I engineered). Specifically with regard to Roe vs. Wade, I might observe a shift towards topics like "abortion," "rights," "Supreme Court," and "justice" around the time of the decision.
+
+-   [DBSCAN]{.underline}
+
+    -    A dense cluster of posts with negative sentiment could highlight a group of users particularly upset about the event. Alternatively, clusters with positive sentiment could represent supporters. This analysis can help identify echo chambers or highly polarised groups on Truth Social.
+
+(***N.B.*** *a lot of the code written is to show the steps that would be taken)*
+
+#### **Do you see a supervised learning approach being feasible for your research question? Why? Why not?**
+
+No, a supervised learning approach would not be feasible for my research question because aupervised learning requires a labeled dataset, but political posts on platforms like Truth Social are not pre-labeled with sentiment or political categories. If I was to manually label such a large dataset it would be time-consuming and may not fully capture the nuanced and context-dependent nature of political sentiment (and the ambiguity inherent in political discourse—such as varied opinions on complex topics like the Roe v. Wade decision—makes it difficult to create reliable labels.
+
+Using **unsupervised learning** methods like LDA and clustering allow us to to understand sentiment evolution and thematic shifts in response to political events on Truth Social. By using these methods over supervised learning methods, I (taking on the task of a social scientist) can gain insights into how the platform's user base reacts to significant political and social events (in this case, the heavily publicised overturn of Roe vs. Wade), track discourse changes over time, and identify patterns of engagement or political polarisation.
+
+**Lastly...**
+
+I find this research question particularly compelling. I have engineered my response to be specific to the case of Roe vs. Wade and the involved parties (Supreme Court Justices, the Republican party, women, etc.). This could be used as a baseline to which the basics of the question ("How has Truth Social's user base reacted to political events and the parties involved?") can be changed to fit any political event, for example through tweaking the exact entities and dates, we could explore the question "How has Truth Social's user base reacted to the Mar-a-Lago raids, and the parties involved (Donald Trump, the FBI, etc.)?"
+
+### Use of AI and Generative Tools
+
+-   I used ChatGPT to aid my NRC Emotion Lexicon word cloud
+
+Other instances of using ChatGPT are detailed where it has been used.

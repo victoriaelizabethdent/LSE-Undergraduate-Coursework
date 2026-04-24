@@ -1,0 +1,10 @@
+-- QUESTION 4: INSERTING SOME MANUAL DATA, for REVIEW table --
+INSERT INTO REVIEW (Review_Number, Date, Text, Ranking, Product_Number, Customer_ID) VALUES
+(548321, '2024-01-15', 'The product exceeded expectations. Great quality!', 5, 79, '40'),
+(634215, '2023-12-11', 'Average performance, but worth the price.', 3, 7, '17'),
+(982340, '2023-09-23', 'Very satisfied with the purchase. Would recommend!', 4, 42, '35'),
+(872153, '2024-02-05', 'Not as described, disappointed with the quality.', 2, 28, '35'),
+(731642, '2024-03-18', 'Fantastic product with quick delivery. Highly recommended!', 5, 48, '16'),
+(692517, '2024-04-12', 'Good value for money and serves its purpose well.', 4, 51, '16'),
+(845761, '2023-08-07', 'Quality was okay, but not as expected from the brand.', 3, 77, '16'),
+(358274, '2024-05-22', 'Exceeded my expectations. Fantastic quality and durability!', 5, 77, '32');

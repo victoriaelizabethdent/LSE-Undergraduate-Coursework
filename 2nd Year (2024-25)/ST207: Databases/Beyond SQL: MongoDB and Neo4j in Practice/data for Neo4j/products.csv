@@ -1,0 +1,100 @@
+Product_Number,Product_Name,Description,Brand,Colour,Depth,Width,Height,Weight,Price,Warranty,Category,Stock_Quantity,Is_Available
+1,Ring,Modi sed dolore labore porro sit ut.,Camacho LLC,DarkKhaki,96,23,113,66.54,75.0,2,Jewelry and Watches,151,Y
+2,Pet Toy,Tempora adipisci non aliquam etincidunt sit quiquia.,Higgins-Mcknight,Turquoise,149,101,44,17.28,155.0,2,Pet Supplies,0,N
+3,Bakery Item,Magnam numquam labore quaerat labore.,"Pearson, Estrada and Thomas",Navy,118,69,141,61.09,475.0,2,Grocery and Gourmet Food,4,Y
+4,Snack,Ut porro dolorem modi aliquam non labore quaerat.,"Bailey, Christensen and Jenkins",NavajoWhite,142,52,130,41.63,235.0,2,Grocery and Gourmet Food,2,Y
+5,Bakery Item,Velit quiquia ipsum neque quiquia adipisci velit eius.,"Livingston, Gonzalez and Thomas",LawnGreen,46,141,150,18.49,65.0,2,Grocery and Gourmet Food,107,Y
+6,Skincare Product,Amet adipisci neque adipisci.,Allen Group,SaddleBrown,72,64,69,11.39,405.0,2,Health and Beauty,142,Y
+7,Office Chair,Est numquam dolore sed est.,"Alexander, Davis and Jackson",Violet,76,117,83,49.9,80.0,2,Furniture,48,Y
+8,Pen,Est consectetur est tempora numquam.,Williams LLC,PapayaWhip,54,111,6,22.92,260.0,2,Books and Stationery,7,Y
+9,Smartwatch,Sed modi porro voluptatem eius quisquam velit sit.,Heath Ltd,Navy,133,116,58,52.63,25.0,2,Electronics,0,N
+10,Pen,Tempora etincidunt dolor dolorem.,Maxwell-Richards,BurlyWood,13,79,19,85.92,205.0,2,Books and Stationery,102,Y
+11,Pet Bed,Dolor adipisci porro aliquam quaerat voluptatem.,"Gibson, Barker and Mills",Chocolate,56,146,118,17.57,460.0,2,Pet Supplies,77,Y
+12,Cat Litter,Consectetur dolorem quaerat sed modi quaerat.,Wilson-Atkins,DarkRed,50,127,27,93.83,255.0,2,Pet Supplies,160,Y
+13,Educational Toy,Magnam etincidunt adipisci dolore dolorem ipsum velit quaerat.,Tapia-Trujillo,Moccasin,35,87,110,21.7,440.0,2,Toys and Games,76,Y
+14,Beverage,Non ut porro eius amet tempora aliquam amet.,Hernandez Inc,SeaShell,35,44,43,91.14,145.0,2,Grocery and Gourmet Food,25,Y
+15,Crib,Labore ipsum ipsum consectetur etincidunt eius.,"Johnson, Jones and Hogan",Plum,126,35,149,55.34,75.0,2,Baby Products,69,Y
+16,Bed,Voluptatem dolor ipsum consectetur quiquia.,Harrison PLC,SteelBlue,97,20,147,55.25,370.0,2,Furniture,0,N
+17,Notebook,Porro consectetur neque est consectetur velit aliquam voluptatem.,Anderson Ltd,OrangeRed,76,4,4,9.62,80.0,2,Books and Stationery,21,Y
+18,Baby Clothing,Consectetur neque dolore sed eius.,"Guzman, Lynn and Allen",Turquoise,41,27,112,91.12,250.0,2,Baby Products,0,N
+19,Supplement,Sit non ipsum consectetur dolorem quisquam.,Woods-Gross,Purple,82,11,7,1.55,195.0,2,Health and Beauty,139,Y
+20,Earring,Magnam amet amet ipsum quiquia neque.,Jones PLC,NavajoWhite,29,65,56,78.62,355.0,2,Jewelry and Watches,186,Y
+21,Notebook,Porro dolorem etincidunt dolorem eius.,Davis Inc,Gray,93,21,72,9.4,490.0,2,Books and Stationery,177,Y
+22,Stroller,Magnam etincidunt aliquam ipsum dolore.,Norris PLC,DarkCyan,82,149,78,24.96,70.0,2,Baby Products,0,N
+23,Diaper,Eius adipisci velit eius magnam.,Hunt and Sons,DarkGoldenRod,19,69,142,86.82,475.0,2,Baby Products,140,Y
+24,Educational Toy,Non non dolor consectetur numquam ut.,Freeman-Brown,Pink,84,20,131,94.95,120.0,2,Toys and Games,120,Y
+25,Headphone,Consectetur sit numquam voluptatem quiquia etincidunt.,"Evans, Burton and Santiago",Black,33,53,37,54.78,470.0,2,Electronics,46,Y
+26,Crib,Dolore etincidunt modi porro dolore.,Stout-Mendoza,Indigo,13,64,65,77.89,445.0,2,Baby Products,9,Y
+27,Beverage,Neque porro neque adipisci magnam voluptatem ipsum dolore.,Blankenship-Booth,Silver,67,125,7,79.41,275.0,2,Grocery and Gourmet Food,115,Y
+28,Planner,Quaerat dolor dolor est voluptatem.,Ferguson-Adams,ForestGreen,71,102,145,40.41,400.0,2,Books and Stationery,0,N
+29,Action Figure,Ipsum numquam quisquam neque sed quisquam tempora eius.,"Mccarthy, Gibson and Richards",Gainsboro,62,81,127,68.85,150.0,2,Toys and Games,0,N
+30,Bakery Item,Quisquam eius aliquam amet ut numquam.,Hicks-Hopkins,PaleVioletRed,95,41,131,76.72,140.0,2,Grocery and Gourmet Food,183,Y
+31,Supplement,Dolore sit sit tempora neque quiquia.,"Castro, Ross and Walton",Indigo,22,32,132,57.34,120.0,2,Health and Beauty,0,N
+32,Accessory,Non sed magnam sit.,Smith-Kaiser,Snow,90,99,132,84.62,355.0,2,Clothing and Apparel,0,N
+33,Organic Food,Quisquam consectetur est tempora amet dolor.,Wilcox LLC,Magenta,21,114,62,97.14,250.0,2,Grocery and Gourmet Food,187,Y
+34,Pen,Quiquia non dolorem consectetur modi.,"Suarez, Taylor and Shaw",DarkSlateGray,137,105,31,66.22,185.0,2,Books and Stationery,111,Y
+35,Organic Food,Numquam neque quaerat adipisci adipisci.,Rosales-Griffin,MediumOrchid,63,67,53,17.7,100.0,2,Grocery and Gourmet Food,64,Y
+36,Supplement,Voluptatem sed neque velit velit dolore.,"Watson, Dawson and Smith",Green,140,92,126,42.29,85.0,2,Health and Beauty,0,N
+37,Cat Litter,Velit consectetur velit adipisci consectetur quaerat.,Dean-Brown,SandyBrown,4,140,76,96.51,495.0,2,Pet Supplies,0,N
+38,Smartphone,Labore quaerat velit etincidunt modi numquam sed labore.,Smith-Adams,SteelBlue,136,83,1,12.83,465.0,2,Electronics,186,Y
+39,Spice,Velit tempora sed quaerat non consectetur.,"Smith, Morales and Garcia",MediumBlue,97,98,53,55.91,185.0,2,Grocery and Gourmet Food,116,Y
+40,Snack,Quiquia voluptatem numquam modi tempora sit etincidunt.,"Harvey, Dominguez and Armstrong",RosyBrown,44,116,136,20.14,345.0,2,Grocery and Gourmet Food,163,Y
+41,Baby Clothing,Ipsum quiquia quaerat tempora sit tempora amet.,Carr PLC,MediumSpringGreen,127,64,75,63.15,270.0,2,Baby Products,1,Y
+42,Pet Toy,Ut amet voluptatem ut quiquia.,"Russo, Williams and Jackson",DarkOrange,3,90,68,79.93,270.0,2,Pet Supplies,185,Y
+43,Smartwatch,Non dolore neque numquam aliquam est.,Wilson PLC,Linen,131,26,109,7.44,50.0,2,Electronics,176,Y
+44,Drone,Sit amet magnam quisquam sit.,Martin and Sons,Khaki,71,78,54,53.05,160.0,2,Electronics,169,Y
+45,Bookcase,Neque numquam porro tempora aliquam dolore.,Davis LLC,PowderBlue,77,143,70,35.91,480.0,2,Furniture,0,N
+46,Cat Litter,Velit est quiquia ipsum sit eius est.,Mendez-Mitchell,LightBlue,63,8,104,31.99,285.0,2,Pet Supplies,60,Y
+47,Hair Care,Quisquam tempora dolore quaerat.,Chase LLC,Chartreuse,114,149,38,60.82,175.0,2,Health and Beauty,0,N
+48,Laptop,Labore etincidunt ut magnam eius consectetur sit.,Reynolds LLC,Sienna,53,79,18,11.09,260.0,2,Electronics,118,Y
+49,Office Chair,Aliquam velit quiquia adipisci.,Kim-Lamb,GhostWhite,56,9,127,70.54,470.0,2,Furniture,83,Y
+50,Skincare Product,Sit dolore consectetur eius magnam eius non neque.,Saunders Inc,Pink,97,44,60,23.96,190.0,2,Health and Beauty,157,Y
+51,Cat Litter,Sit est ipsum non quaerat consectetur dolorem.,Kelly-Kelly,DarkViolet,21,12,4,79.85,315.0,2,Pet Supplies,119,Y
+52,Stroller,Magnam dolore voluptatem ut quisquam.,Mccormick and Sons,Chocolate,39,8,4,39.03,435.0,2,Baby Products,82,Y
+53,Pet Toy,Amet neque quisquam voluptatem etincidunt.,Jones-Griffin,IndianRed,4,10,138,6.55,90.0,2,Pet Supplies,0,N
+54,Bed,Dolorem adipisci non quisquam.,Scott Ltd,Turquoise,34,72,50,66.47,255.0,2,Furniture,11,Y
+55,Hair Care,Aliquam quaerat velit quaerat dolore.,Rodriguez-Cohen,AliceBlue,90,110,144,64.02,45.0,2,Health and Beauty,85,Y
+56,Snack,Modi sed amet sit est tempora quiquia tempora.,Collins-Frank,LightSteelBlue,19,65,46,97.65,105.0,2,Grocery and Gourmet Food,91,Y
+57,Dog Food,Quisquam amet voluptatem numquam.,Yates Ltd,Olive,121,129,95,10.38,210.0,2,Pet Supplies,16,Y
+58,Outdoor Play Set,Magnam ut sit neque adipisci.,"Johnson, Tate and Bryant",Bisque,135,70,24,25.38,215.0,2,Toys and Games,0,N
+59,Dog Food,Ipsum tempora dolor est velit magnam.,Hall Group,DarkGreen,30,78,25,42.77,165.0,2,Pet Supplies,22,Y
+60,Notebook,Velit magnam quaerat non consectetur dolor quisquam voluptatem.,Haynes-Graham,Tomato,115,135,144,72.08,380.0,2,Books and Stationery,129,Y
+61,Educational Toy,Dolorem labore magnam numquam ipsum.,Garcia-Sanchez,DarkOrange,25,105,89,13.07,50.0,2,Toys and Games,180,Y
+62,Beverage,Etincidunt ipsum labore est ipsum tempora tempora.,Crawford Ltd,Plum,134,129,3,52.85,105.0,2,Grocery and Gourmet Food,12,Y
+63,Notebook,Amet neque est non neque labore tempora magnam.,Spencer-Henderson,Bisque,21,149,15,13.89,345.0,2,Books and Stationery,82,Y
+64,Hair Care,Tempora ipsum labore velit quisquam labore magnam etincidunt.,"Ross, Melton and Simmons",Chocolate,119,88,137,51.0,25.0,2,Health and Beauty,126,Y
+65,Accessory,Consectetur dolore ut modi tempora.,Price-Jordan,DarkGray,13,26,140,68.29,465.0,2,Clothing and Apparel,0,N
+66,Bookcase,Quisquam amet amet velit dolorem quisquam voluptatem dolore.,George Group,Peru,131,111,6,59.24,320.0,2,Furniture,0,N
+67,Jean,Non eius modi neque sed labore porro dolorem.,Hicks-Wang,MediumOrchid,124,19,66,41.03,15.0,2,Clothing and Apparel,182,Y
+68,Pet Bed,Amet magnam quiquia numquam velit quaerat quaerat.,Hoffman PLC,LightGoldenRodYellow,109,11,91,85.19,300.0,2,Pet Supplies,192,Y
+69,Skincare Product,Consectetur voluptatem etincidunt numquam tempora ipsum ut porro.,"Barrera, Johnson and Guerrero",DarkGray,147,142,73,52.8,355.0,2,Health and Beauty,0,N
+70,Stroller,Etincidunt dolor numquam neque quaerat dolor porro.,Gibson-Christensen,LightSkyBlue,42,65,3,99.46,480.0,2,Baby Products,133,Y
+71,Pen,Etincidunt sed ut sed adipisci amet amet.,Pratt Group,Olive,2,99,69,46.7,245.0,2,Books and Stationery,170,Y
+72,Bracelet,Neque velit consectetur non labore dolor modi.,Mendoza Ltd,DarkSeaGreen,38,5,45,81.5,245.0,2,Jewelry and Watches,163,Y
+73,Fragrance,Numquam etincidunt tempora modi sit est.,"Waller, Vasquez and Skinner",Lavender,111,86,125,21.94,320.0,2,Health and Beauty,33,Y
+74,Sofa,Dolorem dolor eius tempora adipisci.,"Johnson, Pratt and Jenkins",DarkBlue,27,65,40,48.24,70.0,2,Furniture,103,Y
+75,Smartphone,Modi quiquia aliquam porro.,Chambers Group,DarkBlue,56,137,109,35.0,425.0,2,Electronics,103,Y
+76,Dog Food,Sed est dolore non velit velit.,Bishop-Bailey,BlueViolet,13,55,23,86.71,85.0,2,Pet Supplies,27,Y
+77,Spice,Consectetur quiquia non consectetur dolor magnam quiquia.,Jones Inc,Linen,52,43,134,26.13,485.0,2,Grocery and Gourmet Food,172,Y
+78,Wristwatch,Velit ut quiquia ipsum non.,Parker-Medina,MintCream,27,3,89,92.62,460.0,2,Jewelry and Watches,0,N
+79,Bracelet,Eius numquam est est.,Chase-Jackson,MidnightBlue,64,106,38,13.46,130.0,2,Jewelry and Watches,0,N
+80,Diaper,Voluptatem quiquia numquam dolor modi est est non.,"Wright, Morrison and Mcneil",IndianRed,79,69,126,21.83,245.0,2,Baby Products,105,Y
+81,Academic Textbook,Ut dolore tempora quaerat sit neque porro dolor.,Frye-Torres,WhiteSmoke,15,130,84,53.08,95.0,2,Books and Stationery,154,Y
+82,Jacket,Non non ipsum consectetur dolor dolor sit est.,Klein-Matthews,SkyBlue,58,23,138,82.99,40.0,2,Clothing and Apparel,166,Y
+83,Office Chair,Dolorem numquam quaerat sed etincidunt modi ipsum adipisci.,Marks-Glover,DarkViolet,6,79,57,8.91,150.0,2,Furniture,0,N
+84,Notebook,Tempora numquam magnam adipisci consectetur ipsum labore dolor.,Callahan Inc,LightGoldenRodYellow,30,65,37,68.28,35.0,2,Books and Stationery,72,Y
+85,Dining Table,Eius est numquam aliquam labore adipisci.,Harris-Martin,Cornsilk,21,36,103,37.52,470.0,2,Furniture,0,N
+86,Dining Table,Adipisci numquam ipsum consectetur labore velit.,Hughes-Thornton,DimGray,33,70,104,9.56,375.0,2,Furniture,164,Y
+87,Wristwatch,Porro magnam etincidunt eius quisquam etincidunt porro.,Griffin Group,DarkOliveGreen,35,14,131,11.43,160.0,2,Jewelry and Watches,159,Y
+88,Supplement,Est porro est numquam.,"Mosley, Ingram and Griffith",LightSteelBlue,68,122,33,40.63,75.0,2,Health and Beauty,56,Y
+89,Beverage,Porro velit tempora numquam sed quaerat adipisci quiquia.,"Terrell, Pearson and Rogers",CornflowerBlue,79,115,34,16.0,380.0,2,Grocery and Gourmet Food,191,Y
+90,Shoe,Labore etincidunt dolore dolor velit magnam.,Morrow Inc,Violet,113,104,31,97.68,100.0,2,Clothing and Apparel,37,Y
+91,Diaper,Adipisci voluptatem quisquam dolor magnam tempora porro consectetur.,Espinoza-Hawkins,Aqua,118,8,111,60.06,280.0,2,Baby Products,0,N
+92,Fish Tank,Neque aliquam consectetur non ut aliquam quisquam sit.,"Benton, Ellis and Fernandez",GoldenRod,1,11,29,58.95,345.0,2,Pet Supplies,71,Y
+93,Beverage,Quisquam labore velit non voluptatem sit eius velit.,Sanchez and Sons,Tomato,62,28,144,95.22,110.0,2,Grocery and Gourmet Food,131,Y
+94,Pen,Est sed quisquam ut aliquam quiquia.,"Phillips, Parker and Knapp",LightGreen,112,107,97,36.2,490.0,2,Books and Stationery,30,Y
+95,Accessory,Dolor aliquam ipsum sed consectetur numquam dolore porro.,Williams-Baxter,Purple,125,88,32,97.53,20.0,2,Clothing and Apparel,88,Y
+96,Cat Litter,Sit eius consectetur eius ipsum ipsum sed.,Clark LLC,RoyalBlue,63,119,121,37.27,425.0,2,Pet Supplies,123,Y
+97,Shoe,Magnam porro consectetur quaerat non est voluptatem.,"Torres, Wright and Kane",GoldenRod,33,39,4,37.92,75.0,2,Clothing and Apparel,198,Y
+98,Smartwatch,Sed numquam velit voluptatem etincidunt dolor dolor.,Lee and Sons,Bisque,135,28,66,2.37,260.0,2,Electronics,7,Y
+99,Accessory,Adipisci porro velit eius modi dolore sed.,Spence-Johnson,Khaki,46,88,62,8.07,350.0,2,Clothing and Apparel,163,Y

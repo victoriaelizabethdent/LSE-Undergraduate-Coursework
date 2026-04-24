@@ -4,7 +4,7 @@ subtitle: "Group 8: What Actions Can Be Justified? Are There Regional Difference
 format: html
 editor: visual
 embed-resources: true
-bibliography: Bibliography.bib
+bibliography: Bibliography - Exploring Regional Patterns of Moral Justifications.bib
 ---
 
 # 1. What Actions Can Be Justified?
