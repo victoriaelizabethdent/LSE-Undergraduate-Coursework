@@ -39,7 +39,7 @@ The remaining products without a match either lack NOVA data in the OFF database
 ```
 
 #### HOW TO RUN THE ENRICHMENT CODE
-With an activated `environment.yml` (see [this README.md](https://github.com/lse-ds205/problem-set-1-sanjanathomas10/blob/main/README.md)), the following commands should be run in the terminal:
+With an activated `environment.yml` (see [this README.md]([https://github.com/lse-ds205/problem-set-1-sanjanathomas10/blob/main/README.md](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/blob/main/3rd%20Year%20(2025-26)/DS205%3A%20Applied%20Data%20Science/How%20Ultra-Processed%20is%20the%20Supermarket%20Shelf%3F/README.md)), the following commands should be run in the terminal:
 ```
 cd api
 python nova_enrichment.py
