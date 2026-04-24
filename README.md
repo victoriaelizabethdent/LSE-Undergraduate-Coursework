@@ -4,14 +4,14 @@
 
 ### First Year (2023-24)
 #### DS105A: Data for Data Science (Overall Grade: 70)
-* [Who Speaks at CIVICA? A Web-Scraped Calendar of Events](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/DS105A%3A%20Data%20for%20Data%20Scientists/CIVICA%20Data%20Scraping)
-* [What Can Wikipedia Tell Us About UK Parliamentary Constituencies?](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/DS105A%3A%20Data%20for%20Data%20Scientists/Wikipedia%20Scraping)
-* [An Analysis of the London Housing Market](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/DS105A%3A%20Data%20for%20Data%20Scientists/London%20Housing%20Analysis)
+* [Who Speaks at CIVICA? A Web-Scraped Calendar of Events](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/DS105A%3A%20Data%20for%20Data%20Scientists/Who%20Speaks%20at%20CIVICA%3F%20A%20Web-Scraped%20Calendar%20of%20Events)
+* [What Can Wikipedia Tell Us About UK Parliamentary Constituencies?](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/DS105A%3A%20Data%20for%20Data%20Scientists/What%20Can%20Wikipedia%20Tell%20Us%20About%20UK%20Parliamentary%20Constituencies%3F)
+* [An Analysis of the London Housing Market](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/DS105A%3A%20Data%20for%20Data%20Scientists/An%20Analysis%20of%20the%20London%20Housing%20Market)
 
 #### ST101W: Programming for Data Science (Overall Grade: 75)
-- [Foundations of Python](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/ST101W%3A%20Programming%20for%20Data%20Science/1.%20Foundations%20of%20Python)
-- [Functional Programming & Game Theory](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/ST101W%3A%20Programming%20for%20Data%20Science/2.%20Functional%20Programming%20%26%20Game%20Theory)
-- [Python Simulation & Image Processing](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/ST101W%3A%20Programming%20for%20Data%20Science/3.%20Python%20Simulation%20%26%20Image%20Processing)
+- [Foundations of Python](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/ST101W%3A%20Programming%20for%20Data%20Science/Foundations%20of%20Python)
+- [Functional Programming & Game Theory](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/ST101W%3A%20Programming%20for%20Data%20Science/Functional%20Programming%20%26%20Game%20Theory)
+- [Python Simulation & Image Processing](https://github.com/victoriaelizabethdent/LSE-Undergraduate-Coursework/tree/main/1st%20Year%20(2023-24)/ST101W%3A%20Programming%20for%20Data%20Science/Python%20Simulation%20%26%20Image%20Processing)
 
 ### Second Year (2024-25)
 #### DS202A: Data Science for Social Scientists (Overall Grade: 69)
